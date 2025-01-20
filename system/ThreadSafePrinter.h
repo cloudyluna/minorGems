@@ -17,8 +17,6 @@
 
 #include "minorGems/common.h"
 
-
-
 #ifndef THREAD_SAFE_PRINTER_INCLUDED
 #define THREAD_SAFE_PRINTER_INCLUDED
 
@@ -29,43 +27,42 @@
 #include <stdarg.h>
 
 /**
- * Thread safe printf function.  Note that printf is actually thread safe 
+ * Thread safe printf function.  Note that printf is actually thread safe
  * anyway, so this is just to demonstrate and test locks.  It seems as
  * though printf _isn't_ thread safe on certain platforms, so this class
  * may be useful.
  *
  * @author Jason Rohrer
  */
-class ThreadSafePrinter {
+class ThreadSafePrinter
+{
 
-	public:
-		
-		static int printf( const char* inFormatString, ... );
+  public:
+    static int printf(const char *inFormatString, ...);
 
-	private:
-		static MutexLock sLock;
-
-	};
+  private:
+    static MutexLock sLock;
+};
 
 // initialize static members
-MutexLock ThreadSafePrinter::sLock;	
+MutexLock ThreadSafePrinter::sLock;
 
-inline int ThreadSafePrinter::printf( const char*inFormatString, ... ) {
-		
-	va_list argList;
-	va_start( argList, inFormatString );
-	
-	sLock.lock();
-	
-	int returnVal = vprintf( inFormatString, argList );
-	fflush( stdout );
-	
-	sLock.unlock();
-	
-	va_end( argList );
+inline int ThreadSafePrinter::printf(const char *inFormatString, ...)
+{
 
-	return returnVal;
-	}
+    va_list argList;
+    va_start(argList, inFormatString);
 
+    sLock.lock();
+
+    int returnVal = vprintf(inFormatString, argList);
+    fflush(stdout);
+
+    sLock.unlock();
+
+    va_end(argList);
+
+    return returnVal;
+}
 
 #endif

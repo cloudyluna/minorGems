@@ -13,8 +13,6 @@
 
 #include "minorGems/common.h"
 
-
-
 /**
  * Include this file to define __BYTE_ORDER
  *
@@ -23,34 +21,27 @@
  * __BIG_ENDIAN
  */
 
-
-
 #ifdef __FreeBSD__
 #include <machine/endian.h>
-
 
 #elif defined(__NetBSD__)
 #include <sys/endian.h>
 
-
 #elif defined(__OpenBSD__)
-#include <sys/types.h>
 #include <machine/endian.h>
-
+#include <sys/types.h>
 
 // default BSD case
 #elif defined(BSD) || defined(__APPLE__)
 #include <machine/endian.h>
-
-
 
 #elif defined(SOLARIS)
 // Code for Solaris defs adapted from:
 // MD5 message-digest algorithm.
 // by Colin Plumb in 1993, no copyright is claimed.
 
-//each solaris is different -- this won't work on 2.6 or 2.7
-# include <sys/isa_defs.h>
+// each solaris is different -- this won't work on 2.6 or 2.7
+#include <sys/isa_defs.h>
 
 #define __LITTLE_ENDIAN 1234
 #define __BIG_ENDIAN 4321
@@ -64,16 +55,11 @@
 
 // end solaris case
 
-
-
-#elif defined(WIN_32) || defined(__MINGW32__) ||            \
-      ( defined(__MWERKS__) && defined(__INTEL__) )  // windows case
+#elif defined(WIN_32) || defined(__MINGW32__) || (defined(__MWERKS__) && defined(__INTEL__)) // windows case
 #define __LITTLE_ENDIAN 1234
 #define __BYTE_ORDER __LITTLE_ENDIAN
 
 // end windows case
-
-
 
 #else
 // linux case
@@ -81,28 +67,18 @@
 
 // end linux case
 
-
-
 #endif
 // end of all system-specific cases
 
-
-
-
-
 // BSD calls it BYTE_ORDER, linux calls it __BYTE_ORDER
 #ifndef __BYTE_ORDER
-#define __BYTE_ORDER  BYTE_ORDER
+#define __BYTE_ORDER BYTE_ORDER
 #endif
 
 #ifndef __LITTLE_ENDIAN
-#define __LITTLE_ENDIAN  LITTLE_ENDIAN
+#define __LITTLE_ENDIAN LITTLE_ENDIAN
 #endif
 
 #ifndef __BIG_ENDIAN
-#define __BIG_ENDIAN  BIG_ENDIAN
+#define __BIG_ENDIAN BIG_ENDIAN
 #endif
-
-
-
-

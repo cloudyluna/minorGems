@@ -14,11 +14,10 @@
  * input- and outputStream classes.
  *
  * 2005-November-21		Jason Rohrer
- * Fixed a warning by adding a virtual destructor. 
+ * Fixed a warning by adding a virtual destructor.
  */
 
 #include "minorGems/common.h"
-
 
 #ifndef SERIALIZABLE_CLASS_INCLUDED
 #define SERIALIZABLE_CLASS_INCLUDED
@@ -37,45 +36,38 @@
  * All multi-byte data members should be encoded in using a big endian format.
  *
  * @author Jason Rohrer
- */ 
-class Serializable {
+ */
+class Serializable
+{
 
-	public:
-		
-		/**
-		 * Writes this object out to a stream.
-		 *
-		 * @param inOutputStream the stream to write to.
-		 *
-		 * @return the number of bytes written successfully,
-		 *   or -1 for a stream error.
-		 */
-		virtual int serialize( OutputStream *inOutputStream ) = 0;
-		
-		
-		/**
-		 * Reads this object in from a stream.
-		 *
-		 * @param inInputStream the stream to read from.
-		 *
-		 * @return the number of bytes read successfully,
-		 *   or -1 for a stream error.
-		 */
-		virtual int deserialize( InputStream *inInputStream ) = 0;
-		
+  public:
+    /**
+     * Writes this object out to a stream.
+     *
+     * @param inOutputStream the stream to write to.
+     *
+     * @return the number of bytes written successfully,
+     *   or -1 for a stream error.
+     */
+    virtual int serialize(OutputStream *inOutputStream) = 0;
 
-        
-        virtual ~Serializable();
-        
-	};		
+    /**
+     * Reads this object in from a stream.
+     *
+     * @param inInputStream the stream to read from.
+     *
+     * @return the number of bytes read successfully,
+     *   or -1 for a stream error.
+     */
+    virtual int deserialize(InputStream *inInputStream) = 0;
 
+    virtual ~Serializable();
+};
 
-
-inline Serializable::~Serializable() {
+inline Serializable::~Serializable()
+{
     // does nothing
     // exists to ensure that subclass destructors are called
-    }
-	
-
+}
 
 #endif

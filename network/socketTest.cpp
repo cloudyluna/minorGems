@@ -21,56 +21,56 @@
  * Added test of getting local address from socket.
  */
 
-
 #include "Socket.h"
-#include "SocketStream.h"
-#include "SocketServer.h"
-#include "SocketClient.h" 
 #include "HostAddress.h"
+#include "SocketClient.h"
+#include "SocketServer.h"
+#include "SocketStream.h"
 
 #include <unistd.h>
 
+int main()
+{
 
-int main() {
+    HostAddress *address = HostAddress::getLocalAddress();
 
-	HostAddress *address = HostAddress::getLocalAddress();
+    printf("Local address: ");
+    address->print();
+    printf("\n");
 
-	printf( "Local address: " );
-	address->print();
-	printf( "\n" );
+    int port = 5158;
 
-	int port = 5158;
-    
-	SocketServer *server = new SocketServer( port, 100 );
-	
-	printf( "Waiting for a connection on port %d\n", port );
-	Socket *receiveSocket = server->acceptConnection();
-	
-	if( receiveSocket == NULL ) {
-		return 1;
-		}
-	
-	printf( "Connection received\n" );
+    SocketServer *server = new SocketServer(port, 100);
+
+    printf("Waiting for a connection on port %d\n", port);
+    Socket *receiveSocket = server->acceptConnection();
+
+    if (receiveSocket == NULL)
+    {
+        return 1;
+    }
+
+    printf("Connection received\n");
 
     HostAddress *localAddress = receiveSocket->getLocalHostAddress();
 
-    if( localAddress != NULL ) {
-        printf( "Our local address (fetched from socket) is  " );
+    if (localAddress != NULL)
+    {
+        printf("Our local address (fetched from socket) is  ");
         localAddress->print();
-        printf( "\n" );
+        printf("\n");
         delete localAddress;
-        }
-    
-    
-    SocketStream *receiveStream = new SocketStream( receiveSocket );
-    receiveStream->setReadTimeout( 10000 );
-    
-	int numBytes = 4000;
+    }
 
-	int checksum = 0;
-    
-	unsigned char *buffer = new unsigned char[numBytes];
-    /*    
+    SocketStream *receiveStream = new SocketStream(receiveSocket);
+    receiveStream->setReadTimeout(10000);
+
+    int numBytes = 4000;
+
+    int checksum = 0;
+
+    unsigned char *buffer = new unsigned char[numBytes];
+    /*
     for( int i=0; i<numBytes; i++ ) {
         int numRec = receiveStream->read( buffer, 1 );
         checksum += buffer[ 0 ];
@@ -83,21 +83,22 @@ int main() {
         }
     */
     int count = 0;
-    while( true ) {
-        int numRec = receiveStream->read( buffer, numBytes );
-        printf( "Received %d successfully,\tcount = %d\n", numBytes, count );
+    while (true)
+    {
+        int numRec = receiveStream->read(buffer, numBytes);
+        printf("Received %d successfully,\tcount = %d\n", numBytes, count);
         count++;
-        }
+    }
     /*
-	for( int i=0; i<numBytes; i++ ) {
-		checksum += buffer[ i ];
-		}
+    for( int i=0; i<numBytes; i++ ) {
+        checksum += buffer[ i ];
+        }
     */
-	printf( "Checksum: %d\n", checksum );
+    printf("Checksum: %d\n", checksum);
 
     delete receiveStream;
-	delete receiveSocket;
-	delete server;
-	
-	return 0;
-	} 
+    delete receiveSocket;
+    delete server;
+
+    return 0;
+}

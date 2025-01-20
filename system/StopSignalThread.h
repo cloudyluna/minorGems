@@ -16,18 +16,12 @@
  * Changed to sleep on a semaphore to make sleep interruptable by stop.
  */
 
-
-
 #ifndef STOP_SIGNAL_THREAD_INCLUDED
 #define STOP_SIGNAL_THREAD_INCLUDED
 
-
-
-#include "minorGems/system/Thread.h"
-#include "minorGems/system/MutexLock.h"
 #include "minorGems/system/BinarySemaphore.h"
-
-
+#include "minorGems/system/MutexLock.h"
+#include "minorGems/system/Thread.h"
 
 /**
  * Abstract subclass of thread that has a stop signal.
@@ -38,67 +32,45 @@
  *
  * @author Jason Rohrer
  */
-class StopSignalThread : public virtual Thread {
+class StopSignalThread : public virtual Thread
+{
 
+  public:
+    /**
+     * Only destroys this thread.
+     * Does not stop or join.
+     */
+    virtual ~StopSignalThread();
 
+  protected:
+    StopSignalThread();
 
-    public:
+    // overrides Thread::sleep to make it interruptable by our stop call
+    virtual void sleep(unsigned long inTimeInMilliseconds);
 
+    /**
+     * Signals this thread to stop, interrupting it if it is sleeping.
+     *
+     * Thread safe.
+     *
+     * Thread must be joined after this call returns.
+     */
+    void stop();
 
-        
-        /**
-         * Only destroys this thread.
-         * Does not stop or join.
-         */
-        virtual ~StopSignalThread();
+    /**
+     * Gets whether this thread has been signaled to stop.
+     *
+     * Thread safe.
+     *
+     * @return true if this thread should stop.
+     */
+    char isStopped();
 
+  private:
+    MutexLock *mStopLock;
+    char mStopped;
 
-
-    protected:
-
-
-        
-        StopSignalThread();
-
-
-        
-        // overrides Thread::sleep to make it interruptable by our stop call
-        virtual void sleep( unsigned long inTimeInMilliseconds );
-        
-        
-
-        /**
-         * Signals this thread to stop, interrupting it if it is sleeping.
-         *
-         * Thread safe.
-         *
-         * Thread must be joined after this call returns.
-         */
-        void stop();
-
-        
-        
-        /**
-         * Gets whether this thread has been signaled to stop.
-         *
-         * Thread safe.
-         *
-         * @return true if this thread should stop.
-         */
-        char isStopped();
-
-
-        
-    private:
-
-        MutexLock *mStopLock;
-        char mStopped;
-
-        BinarySemaphore *mSleepSemaphore;
-        
-        
-    };
-
-
+    BinarySemaphore *mSleepSemaphore;
+};
 
 #endif

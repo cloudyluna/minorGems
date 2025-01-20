@@ -18,42 +18,32 @@
  * Changed so that destructor does not join the thread.
  */
 
-
-
 #include "FinishedSignalThread.h"
-
 
 #include <stdio.h>
 
+FinishedSignalThread::FinishedSignalThread() : mFinishedLock(new MutexLock()), mFinished(false)
+{
+}
 
+FinishedSignalThread::~FinishedSignalThread()
+{
 
-FinishedSignalThread::FinishedSignalThread()
-    : mFinishedLock( new MutexLock() ), mFinished( false )  {
-
-    }
-
-
-
-FinishedSignalThread::~FinishedSignalThread() {
-    
     delete mFinishedLock;
-    }
+}
 
-
-
-char FinishedSignalThread::isFinished() {
+char FinishedSignalThread::isFinished()
+{
     mFinishedLock->lock();
     char finished = mFinished;
     mFinishedLock->unlock();
 
     return finished;
-    }
+}
 
-
-
-void FinishedSignalThread::setFinished() {
+void FinishedSignalThread::setFinished()
+{
     mFinishedLock->lock();
     mFinished = true;
     mFinishedLock->unlock();
-    }
-
+}

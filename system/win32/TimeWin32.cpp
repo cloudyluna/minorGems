@@ -16,21 +16,17 @@
  * Fixed daylight savings time bug.
  */
 
-
 #include "minorGems/system/Time.h"
 
-#include <windows.h>
-#include <winbase.h>
-#include <time.h>
 #include <stdio.h>
-
+#include <time.h>
+#include <winbase.h>
+#include <windows.h>
 
 char Time::sEpochTimeSet = false;
 
 // C standard says that -1 is a valid time_t value
-time_t Time::sEpochTime = (time_t)( -1 );
-
-
+time_t Time::sEpochTime = (time_t)(-1);
 
 /**
  * Windows implementation of Time.h.
@@ -38,10 +34,8 @@ time_t Time::sEpochTime = (time_t)( -1 );
  * The 0-point should match the ANSI standard.
  */
 
-
-
-void Time::getCurrentTime( timeSec_t *outSeconds,
-						   unsigned long *outMilliseconds ) {
+void Time::getCurrentTime(timeSec_t *outSeconds, unsigned long *outMilliseconds)
+{
     // convert from win32 broken-down time (which has msec resolution)
     // to an ANSI time struct and then convert to an absolute time in
     // seconds
@@ -57,7 +51,7 @@ void Time::getCurrentTime( timeSec_t *outSeconds,
 
     // get time using a win32 call
     SYSTEMTIME win32TimeStruct;
-    GetLocalTime( &win32TimeStruct );
+    GetLocalTime(&win32TimeStruct);
 
     // convert this win32 structure to the ANSI standard structure
     struct tm ansiTimeStruct;
@@ -73,11 +67,9 @@ void Time::getCurrentTime( timeSec_t *outSeconds,
     // unknown daylight savings time (dst) status
     // if we fail to init this value, we can get inconsistent results
     ansiTimeStruct.tm_isdst = -1;
-    
-    time_t secondsSinceEpoch = mktime( &ansiTimeStruct );
 
-    *outSeconds = Time::normalize( secondsSinceEpoch );
-	*outMilliseconds = (unsigned long)( win32TimeStruct.wMilliseconds );	
-	}
+    time_t secondsSinceEpoch = mktime(&ansiTimeStruct);
 
-
+    *outSeconds = Time::normalize(secondsSinceEpoch);
+    *outMilliseconds = (unsigned long)(win32TimeStruct.wMilliseconds);
+}

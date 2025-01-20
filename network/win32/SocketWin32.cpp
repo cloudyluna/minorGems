@@ -2,20 +2,20 @@
  * Modification History
  *
  * 2001-January-28		Jason Rohrer
- * Created.  
+ * Created.
  *
  * 2001-February-4		Jason Rohrer
  * Fixed receive so that it waits for all requested bytes to arrive.
  *
  * 2001-March-4		Jason Rohrer
- * Replaced include of <winbase.h> and <windef.h> with <windows.h> 
+ * Replaced include of <winbase.h> and <windef.h> with <windows.h>
  * to fix compile bugs encountered with newer windows compilers.
  *
  * 2001-May-12   Jason Rohrer
- * Fixed a bug in socket receive error checking. 
+ * Fixed a bug in socket receive error checking.
  *
  * 2001-November-13		Jason Rohrer
- * Changed timeout parameter to signed, since -1 is a possible argument. 
+ * Changed timeout parameter to signed, since -1 is a possible argument.
  *
  * 2002-April-15    Jason Rohrer
  * Removed call to WSAGetLastError, since it seems to pick up errors from
@@ -87,324 +87,311 @@
  * Be careful that value passed into FD_SET is in range.
  */
 
-
-
-#include "minorGems/network/Socket.h"
 #include "minorGems/network/NetworkFunctionLocks.h"
+#include "minorGems/network/Socket.h"
 
-#include <winsock.h>
 #include <windows.h>
+#include <winsock.h>
 
 #include <stdio.h>
 #include <string.h>
 
 // prototypes
-int timed_read( int inSock, unsigned char *inBuf, 
-	int inLen, long inMilliseconds );
-	
+int timed_read(int inSock, unsigned char *inBuf, int inLen, long inMilliseconds);
 
 /**
  * Windows-specific implementation of the Socket class member functions.
  *
  */
 
-
-
 // Win32 does not define socklen_t
 typedef int socklen_t;
 
-
-
 char Socket::sInitialized = false;
 
+int Socket::initSocketFramework()
+{
+    WORD wVersionRequested;
+    WSADATA wsaData;
 
+    int err;
+    wVersionRequested = MAKEWORD(1, 0);
+    err = WSAStartup(wVersionRequested, &wsaData);
 
-int Socket::initSocketFramework() {
-	WORD wVersionRequested;
-	WSADATA wsaData;
-	
-	int err; 
-	wVersionRequested = MAKEWORD( 1, 0 ); 
-	err = WSAStartup( wVersionRequested, &wsaData );
-	
-	if ( err != 0 ) {
-    	// no usable DLL found  
-    	printf( "WinSock DLL version 1.0 or higher not found.\n" );  
-    	
-		return -1;
-		}
-    
+    if (err != 0)
+    {
+        // no usable DLL found
+        printf("WinSock DLL version 1.0 or higher not found.\n");
+
+        return -1;
+    }
+
     sInitialized = true;
-	return 0;
-	}
-		
+    return 0;
+}
 
+Socket::~Socket()
+{
 
+    if (!mIsConnectionBroken)
+    {
 
-Socket::~Socket() {
-
-    if( !mIsConnectionBroken ) {
-        
         // 2 specifies shutting down both sends and receives
-        shutdown( mNativeSocketID, 2 );
+        shutdown(mNativeSocketID, 2);
         mIsConnectionBroken = true;
-        }
-    
-	closesocket( mNativeSocketID );
-	}
+    }
 
+    closesocket(mNativeSocketID);
+}
 
+int Socket::isConnected()
+{
 
-int Socket::isConnected() {
-    
-    if( mConnected ) {
+    if (mConnected)
+    {
         return 1;
-        }
-    
-	unsigned int socketID = mNativeSocketID;
+    }
+
+    unsigned int socketID = mNativeSocketID;
 
     int ret;
-	fd_set fsr;
-	struct timeval tv;
-	int val;
+    fd_set fsr;
+    struct timeval tv;
+    int val;
     socklen_t len;
 
-	FD_ZERO( &fsr );
-	FD_SET( socketID, &fsr );
+    FD_ZERO(&fsr);
+    FD_SET(socketID, &fsr);
 
     // check if connection event waiting right now
     // timeout of 0
     tv.tv_sec = 0;
-	tv.tv_usec = 0;    
+    tv.tv_usec = 0;
 
-	ret = select( socketID + 1, NULL, &fsr, NULL, &tv );
+    ret = select(socketID + 1, NULL, &fsr, NULL, &tv);
 
-	if( ret==0 ) {
-		// timeout
-		return 0;
-        }
+    if (ret == 0)
+    {
+        // timeout
+        return 0;
+    }
 
     // no timeout
     // error?
 
-	len = 4;
-	ret = getsockopt( socketID, SOL_SOCKET, SO_ERROR, (char*)( &val ), &len );
-	
-	if( ret < 0 ) {
-		// error
-        return -1;
-        }
+    len = 4;
+    ret = getsockopt(socketID, SOL_SOCKET, SO_ERROR, (char *)(&val), &len);
 
-	if( val != 0 ) {
+    if (ret < 0)
+    {
         // error
-		return -1;
-        }
-	
+        return -1;
+    }
+
+    if (val != 0)
+    {
+        // error
+        return -1;
+    }
+
     // success
     mConnected = true;
-    
+
     return 1;
-    }
+}
 
-
-
-void Socket::setNoDelay( int inValue ) {
+void Socket::setNoDelay(int inValue)
+{
 
     int flag = inValue;
-    setsockopt( mNativeSocketID,
-                IPPROTO_TCP,
-                TCP_NODELAY,
-                (char *) &flag,
-                sizeof(int) ); 
-    }
+    setsockopt(mNativeSocketID, IPPROTO_TCP, TCP_NODELAY, (char *)&flag, sizeof(int));
+}
 
+int Socket::send(unsigned char *inBuffer, int inNumBytes, char inAllowedToBlock, char inAllowDelay)
+{
 
+    unsigned int socketID = mNativeSocketID;
 
-
-int Socket::send( unsigned char *inBuffer, int inNumBytes,
-                  char inAllowedToBlock,
-                  char inAllowDelay ) {
-	
-	unsigned int socketID = mNativeSocketID;
-
-    if( inAllowedToBlock ) {
-        if( ! inAllowDelay ) {
+    if (inAllowedToBlock)
+    {
+        if (!inAllowDelay)
+        {
             // turn nodelay on
-            setNoDelay( 1 );
-            }        
-        
-        int returnVal = ::send( socketID, (char*)inBuffer, inNumBytes, 0 );
-        
-        if( ! inAllowDelay ) {
-            // turn nodelay back off
-            setNoDelay( 0 );
-            }
-        
-        return returnVal;
+            setNoDelay(1);
         }
-    else {
+
+        int returnVal = ::send(socketID, (char *)inBuffer, inNumBytes, 0);
+
+        if (!inAllowDelay)
+        {
+            // turn nodelay back off
+            setNoDelay(0);
+        }
+
+        return returnVal;
+    }
+    else
+    {
         // 1 for non-blocking, 0 for blocking
         u_long socketMode = 1;
-        ioctlsocket( socketID, FIONBIO, &socketMode );
+        ioctlsocket(socketID, FIONBIO, &socketMode);
 
-        if( ! inAllowDelay ) {
+        if (!inAllowDelay)
+        {
             // turn nodelay on
-            setNoDelay( 1 );
-            }
+            setNoDelay(1);
+        }
 
-        int result = ::send( socketID, (char*)inBuffer, inNumBytes, 0 );
-        
-        if( ! inAllowDelay ) {
+        int result = ::send(socketID, (char *)inBuffer, inNumBytes, 0);
+
+        if (!inAllowDelay)
+        {
             // turn nodelay back off
-            setNoDelay( 0 );
-            }
-
+            setNoDelay(0);
+        }
 
         // set back to blocking
         socketMode = 0;
-        ioctlsocket( socketID, FIONBIO, &socketMode );
-        
-        
-        if( result == -1 &&
-            WSAGetLastError() == WSAEWOULDBLOCK ) {
+        ioctlsocket(socketID, FIONBIO, &socketMode);
+
+        if (result == -1 && WSAGetLastError() == WSAEWOULDBLOCK)
+        {
 
             return -2;
-            }
-        else {
+        }
+        else
+        {
             return result;
-            }
         }
     }
-		
-		
-		
-int Socket::receive( unsigned char *inBuffer, int inNumBytes,
-	long inTimeout ) {
-	
-	unsigned int socketID = mNativeSocketID;
-	
-	int numReceived = 0;
-	
-	char error = false;
-	char errorReturnValue = -1;
+}
 
+int Socket::receive(unsigned char *inBuffer, int inNumBytes, long inTimeout)
+{
+
+    unsigned int socketID = mNativeSocketID;
+
+    int numReceived = 0;
+
+    char error = false;
+    char errorReturnValue = -1;
 
     char stopLooping = false;
-    
-    
-	// for win32, we can't specify MSG_WAITALL
-	// so we have too loop until the entire message is received,
-	// as long as there is no error.
+
+    // for win32, we can't specify MSG_WAITALL
+    // so we have too loop until the entire message is received,
+    // as long as there is no error.
 
     // note that if a timeout is set, we use the stopLooping flag
     // to return only the available data (we do not emulate MSG_WAITALL)
-    
-	while( numReceived < inNumBytes &&
-           !error &&
-           !stopLooping ) {
-		   
-		// the number of bytes left to receive
-		int numRemaining = inNumBytes - numReceived;
-		
-		// pointer to the spot in the buffer where the
-		// remaining bytes should be stored
-		unsigned char *remainingBuffer = &( inBuffer[ numReceived ] );
-		
-		int numReceivedIn;
-		
-		if( inTimeout == -1 ) {		
-			numReceivedIn = 
-				recv( socketID, (char*)remainingBuffer, numRemaining, 0 );
-			}
-		else {		
+
+    while (numReceived < inNumBytes && !error && !stopLooping)
+    {
+
+        // the number of bytes left to receive
+        int numRemaining = inNumBytes - numReceived;
+
+        // pointer to the spot in the buffer where the
+        // remaining bytes should be stored
+        unsigned char *remainingBuffer = &(inBuffer[numReceived]);
+
+        int numReceivedIn;
+
+        if (inTimeout == -1)
+        {
+            numReceivedIn = recv(socketID, (char *)remainingBuffer, numRemaining, 0);
+        }
+        else
+        {
             // do this around timed_read so we can set mode back to
             // normal regardless of return values
             // windows doesn't have MSG_DONTWAIT
 
             // 1 for non-blocking, 0 for blocking
             u_long socketMode = 1;
-            ioctlsocket( socketID, FIONBIO, &socketMode );
+            ioctlsocket(socketID, FIONBIO, &socketMode);
 
-			numReceivedIn = 
-				timed_read( socketID, remainingBuffer,
-                            numRemaining, inTimeout );
+            numReceivedIn = timed_read(socketID, remainingBuffer, numRemaining, inTimeout);
 
             // back to blocking
             socketMode = 0;
-            ioctlsocket( socketID, FIONBIO, &socketMode );
-
+            ioctlsocket(socketID, FIONBIO, &socketMode);
 
             // stop looping after one timed read
             stopLooping = true;
-			}
-			
-			
-		if( numReceivedIn > 0 ) {
-			numReceived += numReceivedIn;
-			}
-        else {
-            if( numReceivedIn == 0 ) {
+        }
+
+        if (numReceivedIn > 0)
+        {
+            numReceived += numReceivedIn;
+        }
+        else
+        {
+            if (numReceivedIn == 0)
+            {
                 // the socket was gracefully closed
                 // return whatever we have received
                 stopLooping = true;
-                }
-            else if( numReceivedIn == SOCKET_ERROR ) {
+            }
+            else if (numReceivedIn == SOCKET_ERROR)
+            {
                 error = true;
                 // socket error
                 errorReturnValue = -1;
-                }
-            else if( numReceivedIn == -2 ) {
+            }
+            else if (numReceivedIn == -2)
+            {
                 error = true;
                 // timeout
                 errorReturnValue = -2;
-                }
-            else {
-                printf( "Unexpected return value from socket receive: %d.\n",
-                        numReceivedIn );
+            }
+            else
+            {
+                printf("Unexpected return value from socket receive: %d.\n", numReceivedIn);
                 error = true;
                 errorReturnValue = -1;
-                }
-            
             }
-			
-		}
-
-    if( error ) {
-        return errorReturnValue;
         }
-    else {
-        return numReceived;
-        }
-	}
-
-
-
-void Socket::breakConnection() {
-
-    if( !mIsConnectionBroken ) {
-
-        shutdown( mNativeSocketID, 2 );
-        mIsConnectionBroken = true;
-        }
-    
-	closesocket( mNativeSocketID );
     }
 
+    if (error)
+    {
+        return errorReturnValue;
+    }
+    else
+    {
+        return numReceived;
+    }
+}
 
+void Socket::breakConnection()
+{
 
-HostAddress *Socket::getRemoteHostAddress() {
+    if (!mIsConnectionBroken)
+    {
+
+        shutdown(mNativeSocketID, 2);
+        mIsConnectionBroken = true;
+    }
+
+    closesocket(mNativeSocketID);
+}
+
+HostAddress *Socket::getRemoteHostAddress()
+{
 
     // adapted from Unix Socket FAQ
-    
+
     socklen_t len;
     struct sockaddr_in sin;
-    
-    len = sizeof sin;
-    int error = getpeername( mNativeSocketID, (struct sockaddr *) &sin, &len );
 
-    if( error ) {
+    len = sizeof sin;
+    int error = getpeername(mNativeSocketID, (struct sockaddr *)&sin, &len);
+
+    if (error)
+    {
         return NULL;
-        }
+    }
 
     // this is potentially insecure, since a fake DNS name might be returned
     // we should use the IP address only
@@ -413,51 +400,44 @@ HostAddress *Socket::getRemoteHostAddress() {
     //                                       sizeof sin.sin_addr,
     //                                       AF_INET );
 
-
     NetworkFunctionLocks::mInet_ntoaLock.lock();
     // returned string is statically allocated, copy it
-    char *ipAddress = stringDuplicate( inet_ntoa( sin.sin_addr ) );
+    char *ipAddress = stringDuplicate(inet_ntoa(sin.sin_addr));
     NetworkFunctionLocks::mInet_ntoaLock.unlock();
 
-    int port = ntohs( sin.sin_port );
-    
-    return new HostAddress( ipAddress, port );    
-    }
+    int port = ntohs(sin.sin_port);
 
+    return new HostAddress(ipAddress, port);
+}
 
-
-HostAddress *Socket::getLocalHostAddress() {
+HostAddress *Socket::getLocalHostAddress()
+{
 
     // adapted from GTK-gnutalla code, and elsewhere
 
     struct sockaddr_in addr;
-	int len = sizeof( struct sockaddr_in );
+    int len = sizeof(struct sockaddr_in);
 
-    int result = getsockname( mNativeSocketID, 
-                              (struct sockaddr*)( &addr ), &len );
+    int result = getsockname(mNativeSocketID, (struct sockaddr *)(&addr), &len);
 
-    if( result == -1 ) {
+    if (result == -1)
+    {
         return NULL;
-        }
-    else {
-
-        char *stringAddress = inet_ntoa( addr.sin_addr );
-
-        return new HostAddress( stringDuplicate( stringAddress ),
-                                0 );
-        }
-    
     }
+    else
+    {
 
+        char *stringAddress = inet_ntoa(addr.sin_addr);
 
+        return new HostAddress(stringDuplicate(stringAddress), 0);
+    }
+}
 
-
-char Socket::isSocketInFDRange() {
+char Socket::isSocketInFDRange()
+{
     // FD_SETSIZE is NOT max socket ID on Windows
     return true;
-    }
-
-
+}
 
 /* timed_read adapted from gnut, by Josh Pieper */
 /* Josh Pieper, (c) 2000 */
@@ -465,68 +445,66 @@ char Socket::isSocketInFDRange() {
 
 // exactly like the real read, except that it returns -2
 // if no data was read before the timeout occurred...
-int timed_read( int inSock, unsigned char *inBuf, 
-	int inLen, long inMilliseconds ) {
-	fd_set fsr;
-	struct timeval tv;
-	int ret;
-
+int timed_read(int inSock, unsigned char *inBuf, int inLen, long inMilliseconds)
+{
+    fd_set fsr;
+    struct timeval tv;
+    int ret;
 
     // FD_SETSIZE is NOT max socket ID on Windows
-    
-    
-	FD_ZERO( &fsr );
-	FD_SET( inSock, &fsr );
- 
-	tv.tv_sec = inMilliseconds / 1000;
-	int remainder = inMilliseconds % 1000;
-	tv.tv_usec = remainder * 1000;
-	
-	ret = select( inSock + 1, &fsr, NULL, NULL, &tv );
-	
-	if( ret==0 ) {
-		// printf( "Timed out waiting for data on socket receive.\n" );
-		return -2;
-		}
 
-    while( ret<0 && WSAGetLastError() == WSAEINTR ) {
+    FD_ZERO(&fsr);
+    FD_SET(inSock, &fsr);
+
+    tv.tv_sec = inMilliseconds / 1000;
+    int remainder = inMilliseconds % 1000;
+    tv.tv_usec = remainder * 1000;
+
+    ret = select(inSock + 1, &fsr, NULL, NULL, &tv);
+
+    if (ret == 0)
+    {
+        // printf( "Timed out waiting for data on socket receive.\n" );
+        return -2;
+    }
+
+    while (ret < 0 && WSAGetLastError() == WSAEINTR)
+    {
         // interrupted
         // try again
-        ret = select( inSock + 1, &fsr, NULL, NULL, &tv );
-        }
-    
-    if( ret == 0 ) {
+        ret = select(inSock + 1, &fsr, NULL, NULL, &tv);
+    }
+
+    if (ret == 0)
+    {
         // time out after at least one EINTR
         return -2;
-        }
+    }
 
-
-	if( ret<0 ) {
-        perror( "Selecting socket during receive failed" );
+    if (ret < 0)
+    {
+        perror("Selecting socket during receive failed");
         return ret;
-        }
-	
-	
-	ret = recv( inSock, (char*)inBuf, inLen, 0 );
-	
+    }
 
-    if( ret == 0  ) {
+    ret = recv(inSock, (char *)inBuf, inLen, 0);
+
+    if (ret == 0)
+    {
         // select came back as 1, but no data there
         // connection closed on remote end
         return -1;
-        }
+    }
 
-    if( ret == -1 && 
-        ( WSAGetLastError() == WSAEINTR || 
-          WSAGetLastError() == WSAEWOULDBLOCK ) ) {
-        
+    if (ret == -1 && (WSAGetLastError() == WSAEINTR || WSAGetLastError() == WSAEWOULDBLOCK))
+    {
+
         // select came back 1, but then our recv operation was interrupted
         // or would block
-        
+
         // treat like a timeout
         return -2;
-        }
+    }
 
-
-	return ret;
-	}
+    return ret;
+}

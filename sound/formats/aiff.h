@@ -5,16 +5,11 @@
  * Created.
  */
 
-
-
 #ifndef AIFF_INCLUDED
 #define AIFF_INCLUDED
 
-
 #include <stdint.h>
 #include <stdlib.h>
-
-
 
 /**
  * Constructs an AIFF header.
@@ -29,16 +24,10 @@
  * @return the header.
  *   Must be destroyed by caller.
  */
-unsigned char *getAIFFHeader( int inNumChannels, int inSampleSizeInBits,
-                              int inSampleRateInHertz,
-                              int inNumSampleFrames, int *outHeaderLength );
-
-
+unsigned char *getAIFFHeader(int inNumChannels, int inSampleSizeInBits, int inSampleRateInHertz, int inNumSampleFrames,
+                             int *outHeaderLength);
 
 // returns newly allocated array of samples destroyed by caller
-int16_t *readMono16AIFFData( unsigned char *inData, int inNumBytes,
-                             int *outNumSamples,
-                             int *outSampleRate = NULL );
-
+int16_t *readMono16AIFFData(unsigned char *inData, int inNumBytes, int *outNumSamples, int *outSampleRate = NULL);
 
 #endif

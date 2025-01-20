@@ -8,19 +8,19 @@
  * Fixed a bug in the receive code (in use of timed_read).
  *
  * 2001-January-15		Jason Rohrer
- * Added a safeguard against receives that exceed the 
+ * Added a safeguard against receives that exceed the
  * network buffer size.
  *
  * 2001-January-28		Jason Rohrer
- * Changed to comply with new initSocketFramework Socket interface. 
- * Added a close() call to the destructor.  
+ * Changed to comply with new initSocketFramework Socket interface.
+ * Added a close() call to the destructor.
  *
  * 2001-January-29		Jason Rohrer
  * Fixed compile bug by including unistd.h for close call.
  *
  * 2001-November-13		Jason Rohrer
  * Changed to use ::send function instead of __send function.
- * Changed timeout parameter to signed, since -1 is a possible argument. 
+ * Changed timeout parameter to signed, since -1 is a possible argument.
  *
  * 2001-December-12		Jason Rohrer
  * Changed the include order to make BSD compatible.
@@ -85,49 +85,40 @@
  * anyway).  select was found to be a hotspot with profiler.
  */
 
-
-
-#include "minorGems/network/Socket.h"
 #include "minorGems/network/NetworkFunctionLocks.h"
+#include "minorGems/network/Socket.h"
 
 #include <sys/time.h>
 
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/errno.h>
-#include <netinet/in.h>
-#include <netinet/tcp.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
+#include <sys/errno.h>
+#include <sys/socket.h>
+#include <sys/types.h>
 
-#include <stdio.h>
 #include <fcntl.h>
+#include <stdio.h>
 #include <string.h>
 
-#include <unistd.h>
-#include <signal.h>
 #include <errno.h>
-
-
+#include <signal.h>
+#include <unistd.h>
 
 // BSD does not define socklen_t
 #ifdef BSD
 #ifndef IPHONE
 #ifndef __OpenBSD__
-#ifndef _SOCKLEN_T     // later versions of MacOS define it and mark it
+#ifndef _SOCKLEN_T // later versions of MacOS define it and mark it
 typedef int socklen_t;
 #endif
 #endif
 #endif
 #endif
 
-
-
 // prototypes
-int timed_read( int inSock, unsigned char *inBuf, 
-	int inLen, long inMilliseconds );
-
-
+int timed_read(int inSock, unsigned char *inBuf, int inLen, long inMilliseconds);
 
 /**
  * Linux-specific implementation of the Socket class member functions.
@@ -138,203 +129,200 @@ int timed_read( int inSock, unsigned char *inBuf,
  * no special options needed
  */
 
-
-
 char Socket::sInitialized = false;
 
-
-
-int Socket::initSocketFramework() {
+int Socket::initSocketFramework()
+{
     // ignore SIGPIPE, which occurs on send whenever the receiver
     // has closed the socket
     signal(SIGPIPE, SIG_IGN);
 
     sInitialized = true;
-	return 0;
-	}
+    return 0;
+}
 
+Socket::~Socket()
+{
+    if (!mIsConnectionBroken)
+    {
 
-
-Socket::~Socket() {
-    if( !mIsConnectionBroken ) {
-
-        shutdown( mNativeSocketID, SHUT_RDWR );
+        shutdown(mNativeSocketID, SHUT_RDWR);
         mIsConnectionBroken = true;
-        }
-    
-	close( mNativeSocketID );
-	}
+    }
 
+    close(mNativeSocketID);
+}
 
+int Socket::isConnected()
+{
 
-int Socket::isConnected() {
-    
-    if( mConnected ) {
+    if (mConnected)
+    {
         return 1;
-        }
-    
+    }
 
     int ret;
-	fd_set fsr;
-	struct timeval tv;
-	int val;
+    fd_set fsr;
+    struct timeval tv;
+    int val;
     socklen_t len;
 
-	FD_ZERO( &fsr );
-	FD_SET( mNativeSocketID, &fsr );
+    FD_ZERO(&fsr);
+    FD_SET(mNativeSocketID, &fsr);
 
     // check if connection event waiting right now
     // timeout of 0
     tv.tv_sec = 0;
-	tv.tv_usec = 0;    
+    tv.tv_usec = 0;
 
-	ret = select( mNativeSocketID + 1, NULL, &fsr, NULL, &tv );
+    ret = select(mNativeSocketID + 1, NULL, &fsr, NULL, &tv);
 
-	if( ret==0 ) {
-		// timeout
-		return 0;
-        }
+    if (ret == 0)
+    {
+        // timeout
+        return 0;
+    }
 
     // no timeout
     // error?
 
-	len = 4;
-	ret = getsockopt( mNativeSocketID, SOL_SOCKET, SO_ERROR, &val, &len );
-	
-	if( ret < 0 ) {
-		// error
-        return -1;
-        }
+    len = 4;
+    ret = getsockopt(mNativeSocketID, SOL_SOCKET, SO_ERROR, &val, &len);
 
-	if( val != 0 ) {
+    if (ret < 0)
+    {
         // error
-		return -1;
-        }
-	
+        return -1;
+    }
+
+    if (val != 0)
+    {
+        // error
+        return -1;
+    }
+
     // success
     mConnected = true;
-    
+
     return 1;
-    }
+}
 
+void Socket::setNoDelay(int inValue)
+{
 
-
-void Socket::setNoDelay( int inValue ) {
-	
     int flag = inValue;
-    setsockopt( mNativeSocketID,
-                IPPROTO_TCP,
-                TCP_NODELAY,
-                (char *) &flag,
-                sizeof(int) ); 
-    }
+    setsockopt(mNativeSocketID, IPPROTO_TCP, TCP_NODELAY, (char *)&flag, sizeof(int));
+}
 
+int Socket::send(unsigned char *inBuffer, int inNumBytes, char inAllowedToBlock, char inAllowDelay)
+{
 
-
-int Socket::send( unsigned char *inBuffer, int inNumBytes,
-                  char inAllowedToBlock,
-                  char inAllowDelay ) {
-    
-
-    if( inAllowedToBlock ) {
-        if( ! inAllowDelay ) {
+    if (inAllowedToBlock)
+    {
+        if (!inAllowDelay)
+        {
             // turn nodelay on
-            setNoDelay( 1 );
-            }
-            
-        int returnVal = ::send( mNativeSocketID, inBuffer, inNumBytes, 0 );
-        
-        if( ! inAllowDelay ) {
+            setNoDelay(1);
+        }
+
+        int returnVal = ::send(mNativeSocketID, inBuffer, inNumBytes, 0);
+
+        if (!inAllowDelay)
+        {
             // turn nodelay back off
-            setNoDelay( 0 );
-            }
+            setNoDelay(0);
+        }
 
         return returnVal;
-        }
-    else {
+    }
+    else
+    {
 
         // set to non-blocking mode
-        int result = fcntl( mNativeSocketID, F_SETFL, O_NONBLOCK );
+        int result = fcntl(mNativeSocketID, F_SETFL, O_NONBLOCK);
 
-        if( result < 0 ) {
+        if (result < 0)
+        {
             return result;
-            }
-        
-        if( ! inAllowDelay ) {
+        }
+
+        if (!inAllowDelay)
+        {
             // turn nodelay on
-            setNoDelay( 1 );
-            }
+            setNoDelay(1);
+        }
 
+        int returnValue = ::send(mNativeSocketID, inBuffer, inNumBytes,
+                                 // no flags
+                                 0);
 
-        int returnValue = ::send( mNativeSocketID, inBuffer, inNumBytes,
-                                  // no flags
-                                  0 );
-        
-        
-        if( ! inAllowDelay ) {
+        if (!inAllowDelay)
+        {
             // turn nodelay back off
-            setNoDelay( 0 );
-            }
-
+            setNoDelay(0);
+        }
 
         // back into blocking mode
-        result = fcntl( mNativeSocketID, F_SETFL, 0 );
+        result = fcntl(mNativeSocketID, F_SETFL, 0);
 
-        if( result < 0 ) {
+        if (result < 0)
+        {
             return result;
-            }
+        }
 
-        
-        if( returnValue == -1 && errno == EAGAIN ) {
+        if (returnValue == -1 && errno == EAGAIN)
+        {
             return -2;
-            }
-        else {
+        }
+        else
+        {
             return returnValue;
-            }
         }
     }
-		
-		
-int Socket::receive( unsigned char *inBuffer, int inNumBytes,
-	long inTimeout ) {
-	
-	if( inTimeout == -1 ) {
+}
+
+int Socket::receive(unsigned char *inBuffer, int inNumBytes, long inTimeout)
+{
+
+    if (inTimeout == -1)
+    {
         // use MSG_WAITALL flag here to block until inNumBytes has arrived
-		return recv( mNativeSocketID, inBuffer, inNumBytes, MSG_WAITALL );
-		}
-	else {		
-		return timed_read( mNativeSocketID, inBuffer, inNumBytes, inTimeout );
-		}
-	}
+        return recv(mNativeSocketID, inBuffer, inNumBytes, MSG_WAITALL);
+    }
+    else
+    {
+        return timed_read(mNativeSocketID, inBuffer, inNumBytes, inTimeout);
+    }
+}
 
+void Socket::breakConnection()
+{
 
+    if (!mIsConnectionBroken)
+    {
 
-void Socket::breakConnection() {
-	
-    if( !mIsConnectionBroken ) {
-
-        shutdown( mNativeSocketID, SHUT_RDWR );
+        shutdown(mNativeSocketID, SHUT_RDWR);
         mIsConnectionBroken = true;
-        }
-    
-	close( mNativeSocketID );
     }
 
+    close(mNativeSocketID);
+}
 
+HostAddress *Socket::getRemoteHostAddress()
+{
 
-HostAddress *Socket::getRemoteHostAddress() {
-    
     // adapted from Unix Socket FAQ
-    
+
     socklen_t len;
     struct sockaddr_in sin;
-    
-    len = sizeof sin;
-    int error = getpeername( mNativeSocketID, (struct sockaddr *) &sin, &len );
 
-    if( error ) {
+    len = sizeof sin;
+    int error = getpeername(mNativeSocketID, (struct sockaddr *)&sin, &len);
+
+    if (error)
+    {
         return NULL;
-        }
+    }
 
     // this is potentially insecure, since a fake DNS name might be returned
     // we should use the IP address only
@@ -343,52 +331,47 @@ HostAddress *Socket::getRemoteHostAddress() {
     //                                       sizeof sin.sin_addr,
     //                                       AF_INET );
 
-
     NetworkFunctionLocks::mInet_ntoaLock.lock();
     // returned string is statically allocated, copy it
-    char *ipAddress = stringDuplicate( inet_ntoa( sin.sin_addr ) );
+    char *ipAddress = stringDuplicate(inet_ntoa(sin.sin_addr));
     NetworkFunctionLocks::mInet_ntoaLock.unlock();
 
-    int port = ntohs( sin.sin_port );
-    
-    return new HostAddress( ipAddress, port );    
-    }
+    int port = ntohs(sin.sin_port);
 
+    return new HostAddress(ipAddress, port);
+}
 
+HostAddress *Socket::getLocalHostAddress()
+{
 
-HostAddress *Socket::getLocalHostAddress() {
-    
     // adapted from GTK-gnutalla code, and elsewhere
 
     struct sockaddr_in addr;
-	socklen_t len = sizeof( struct sockaddr_in );
+    socklen_t len = sizeof(struct sockaddr_in);
 
-    int result = getsockname( mNativeSocketID, 
-                              (struct sockaddr*)( &addr ), &len );
+    int result = getsockname(mNativeSocketID, (struct sockaddr *)(&addr), &len);
 
-    if( result == -1 ) {
+    if (result == -1)
+    {
         return NULL;
-        }
-    else {
-
-        char *stringAddress = inet_ntoa( addr.sin_addr );
-
-        return new HostAddress( stringDuplicate( stringAddress ),
-                                0 );
-        }
-    
     }
+    else
+    {
 
+        char *stringAddress = inet_ntoa(addr.sin_addr);
 
+        return new HostAddress(stringDuplicate(stringAddress), 0);
+    }
+}
 
-char Socket::isSocketInFDRange() {
-    if( mNativeSocketID >= FD_SETSIZE || mNativeSocketID < 0 ) {
+char Socket::isSocketInFDRange()
+{
+    if (mNativeSocketID >= FD_SETSIZE || mNativeSocketID < 0)
+    {
         return false;
-        }
-    return true;
     }
-
-
+    return true;
+}
 
 /* timed_read adapted from gnut, by Josh Pieper */
 /* Josh Pieper, (c) 2000 */
@@ -396,84 +379,84 @@ char Socket::isSocketInFDRange() {
 
 // exactly like the real read, except that it returns -2
 // if no data was read before the timeout occurred...
-int timed_read( int inSock, unsigned char *inBuf, 
-	int inLen, long inMilliseconds ) {
-	fd_set fsr;
-	struct timeval tv;
-	int ret;
+int timed_read(int inSock, unsigned char *inBuf, int inLen, long inMilliseconds)
+{
+    fd_set fsr;
+    struct timeval tv;
+    int ret;
 
     // only need to do select stuff, which consumes substantial resources
     // if we need a non-zero timeout
-    if( inMilliseconds > 0 ) {
-        
-	
-        //ret = fcntl( inSock, F_SETFL, O_NONBLOCK );
-	
-        if( inSock >= FD_SETSIZE || inSock < 0 ) {
-            printf( "Socket ID %d out of range (FD_SETSIZE=%d) in timed_read, "
-                    "treating it like a socket error.\n",
-                    inSock, FD_SETSIZE );
-            return -1;
-            }
-    
+    if (inMilliseconds > 0)
+    {
 
-        FD_ZERO( &fsr );
-        FD_SET( inSock, &fsr );
-        
+        // ret = fcntl( inSock, F_SETFL, O_NONBLOCK );
+
+        if (inSock >= FD_SETSIZE || inSock < 0)
+        {
+            printf("Socket ID %d out of range (FD_SETSIZE=%d) in timed_read, "
+                   "treating it like a socket error.\n",
+                   inSock, FD_SETSIZE);
+            return -1;
+        }
+
+        FD_ZERO(&fsr);
+        FD_SET(inSock, &fsr);
+
         tv.tv_sec = inMilliseconds / 1000;
         int remainder = inMilliseconds % 1000;
         tv.tv_usec = remainder * 1000;
-        
-        ret = select( inSock + 1, &fsr, NULL, NULL, &tv );
-        
-        if( ret==0 ) {
+
+        ret = select(inSock + 1, &fsr, NULL, NULL, &tv);
+
+        if (ret == 0)
+        {
             // printf( "Timed out waiting for data on socket receive.\n" );
             return -2;
-            }
-	
-        while( ret<0 && errno == EINTR ) {
+        }
+
+        while (ret < 0 && errno == EINTR)
+        {
             // interrupted
             // try again
-            ret = select( inSock + 1, &fsr, NULL, NULL, &tv );
-            }
+            ret = select(inSock + 1, &fsr, NULL, NULL, &tv);
+        }
 
-        if( ret == 0 ) {
+        if (ret == 0)
+        {
             // time out after at least one EINTR
             return -2;
-            }
-    
-
-        if( ret<0 ) {
-            perror( "Selecting socket during receive failed" );
-            return ret;
-            }
         }
-    
 
+        if (ret < 0)
+        {
+            perror("Selecting socket during receive failed");
+            return ret;
+        }
+    }
 
     // do not use MSG_WAITALL flag here, since we just want to return
     // data that is available
-	ret = recv( inSock, inBuf, inLen, MSG_DONTWAIT );
-	
+    ret = recv(inSock, inBuf, inLen, MSG_DONTWAIT);
 
-    if( ret == 0  ) {
+    if (ret == 0)
+    {
         // select came back as 1 (or MSG_DONTWAIT specified, if we
         // have 0-timeout) but no data there
         // connection closed on remote end
         return -1;
-        }
-    
-    if( ret == -1 && 
-        ( errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK ) ) {
+    }
+
+    if (ret == -1 && (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK))
+    {
         // select came back 1, but then our recv operation was interrupted
         // or would block
-        
+
         // treat like a timeout
         return -2;
-        }
-        
+    }
 
-	//fcntl( inSock, F_SETFL, 0 );
-	
-	return ret;
-	}
+    // fcntl( inSock, F_SETFL, 0 );
+
+    return ret;
+}

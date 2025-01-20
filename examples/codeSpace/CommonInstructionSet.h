@@ -10,7 +10,7 @@
  * 2001-November-30		Jason Rohrer
  * Changed names of functions to avoid keyword collisions.
  */
- 
+
 #ifndef COMMON_INSTRUCTION_SET_INCLUDED
 #define COMMON_INSTRUCTION_SET_INCLUDED
 
@@ -20,35 +20,30 @@
 
 /**
  * Abstract class that implements some commonly used instructions.
- * 
+ *
  * Instructions include:
  * COPY A1 A3 L1		::Copies L1 bits of memory starting at A1 into A3
  * AND A1 A2 A3 L1		::Computes A1 and A2 for L1 bits and puts result at A3
- * NOT A1 A3 L1			::Computes not A1 for L1 bits and puts result at A3 
+ * NOT A1 A3 L1			::Computes not A1 for L1 bits and puts result at A3
  */
-class CommonInstructionSet {
+class CommonInstructionSet
+{
 
-	protected:
-		
-		// force this class to be abstract by protecting
-		// it's constructor
-		CommonInstructionSet();
-		
-		void copyi( BitMemory *inMemory, unsigned long inSrc, 
-			unsigned long inDest, unsigned long inLength );
-		
-		
-		void andi( BitMemory *inMemory, unsigned long inSrc1, 
-			unsigned long inSrc2, unsigned long inDest, 
-			unsigned long inLength );	
-		
-		
-		void noti( BitMemory *inMemory, unsigned long inSrc, 
-			unsigned long inDest, unsigned long inLength );	
-	
-	};
+  protected:
+    // force this class to be abstract by protecting
+    // it's constructor
+    CommonInstructionSet();
 
-inline CommonInstructionSet::CommonInstructionSet() {
-	}
+    void copyi(BitMemory *inMemory, unsigned long inSrc, unsigned long inDest, unsigned long inLength);
+
+    void andi(BitMemory *inMemory, unsigned long inSrc1, unsigned long inSrc2, unsigned long inDest,
+              unsigned long inLength);
+
+    void noti(BitMemory *inMemory, unsigned long inSrc, unsigned long inDest, unsigned long inLength);
+};
+
+inline CommonInstructionSet::CommonInstructionSet()
+{
+}
 
 #endif

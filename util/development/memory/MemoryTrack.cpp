@@ -28,18 +28,13 @@
  * Removed file and line arguments from deallocation calls.
  */
 
-
-
 #ifdef DEBUG_MEMORY
-
 
 #include "minorGems/util/development/memory/MemoryTrack.h"
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
-
-
 
 int MemoryTrackStaticInitCounter::mCount = 0;
 
@@ -53,225 +48,199 @@ int MemoryTrack::mTotalAllocationSize = 0;
 int MemoryTrack::mTotalDeallocationSize = 0;
 int MemoryTrack::mNumberOfAllocations = 0;
 
-
-
-void MemoryTrack::addAllocation( void *inPointer,
-                                 unsigned int inAllocationSize,
-                                 int inAllocationType,
-                                 const char *inFileName,
-                                 int inLineNumber ) {
+void MemoryTrack::addAllocation(void *inPointer, unsigned int inAllocationSize, int inAllocationType,
+                                const char *inFileName, int inLineNumber)
+{
 
     mLock->lock();
 
-    if( !mTracking ) {
-        printf( "Tracking off on allocation (0x%x) [%d bytes] %s:%d.\n",
-                (unsigned int)inPointer,
-                inAllocationSize,
-                inFileName, inLineNumber );
+    if (!mTracking)
+    {
+        printf("Tracking off on allocation (0x%x) [%d bytes] %s:%d.\n", (unsigned int)inPointer, inAllocationSize,
+               inFileName, inLineNumber);
 
         mLock->unlock();
         return;
-        }
-    
+    }
 
     // insert after head of list
-    AllocationList *element =
-        (AllocationList *)malloc( sizeof( AllocationList ) );
+    AllocationList *element = (AllocationList *)malloc(sizeof(AllocationList));
     element->mPrevious = (void *)mListHead;
     element->mNext = mListHead->mNext;
 
     mListHead->mNext = (void *)element;
 
-
-    AllocationList *nextElement = (AllocationList *)( element->mNext );
-    if( nextElement != NULL ) {
+    AllocationList *nextElement = (AllocationList *)(element->mNext);
+    if (nextElement != NULL)
+    {
         nextElement->mPrevious = (void *)element;
-        }
-    
+    }
+
     element->mPointer = inPointer;
     element->mAllocationSize = inAllocationSize;
     element->mAllocationType = inAllocationType;
     element->mFileName = inFileName;
     element->mLineNumber = inLineNumber;
 
-
     mTotalAllocationSize += inAllocationSize;
 
-    mNumberOfAllocations ++;
-    
+    mNumberOfAllocations++;
+
     // wipe this block of memory
-    clearMemory( inPointer, inAllocationSize );
-    
+    clearMemory(inPointer, inAllocationSize);
+
     mLock->unlock();
-    }
+}
 
-
-
-int MemoryTrack::addDeallocation( void *inPointer,
-                                  int inDeallocationType ) {
+int MemoryTrack::addDeallocation(void *inPointer, int inDeallocationType)
+{
 
     mLock->lock();
 
-    if( inPointer == NULL ) {
-        printf( "NULL pointer (0x%x) deallocated\n",
-                (unsigned int)inPointer );
-        }
+    if (inPointer == NULL)
+    {
+        printf("NULL pointer (0x%x) deallocated\n", (unsigned int)inPointer);
+    }
 
-    
-    if( inPointer == (void *)mLock ) {
+    if (inPointer == (void *)mLock)
+    {
         // we're seeing the deallocation of our own static lock as
         // the system exits
         // ignore it
         mLock->unlock();
         return 0;
-        }
-    
-    if( !mTracking ) {
-        printf( "Tracking off on deallocation (0x%x)\n",
-                (unsigned int)inPointer );
+    }
+
+    if (!mTracking)
+    {
+        printf("Tracking off on deallocation (0x%x)\n", (unsigned int)inPointer);
         mLock->unlock();
         return 0;
-        }
+    }
 
-    
+    AllocationList *element = (AllocationList *)(mListHead->mNext);
 
-    AllocationList *element = (AllocationList *)( mListHead->mNext );
+    while (element != NULL)
+    {
 
-    while( element != NULL ) {
-        
         void *pointer = element->mPointer;
-        
-        if( pointer == inPointer ) {
+
+        if (pointer == inPointer)
+        {
 
             unsigned int allocationSize = element->mAllocationSize;
             int allocationType = element->mAllocationType;
-            const char *allocFileName = element->mFileName;            
+            const char *allocFileName = element->mFileName;
             int allocLineNumber = element->mLineNumber;
-            
-            // remove from list, whether or not types match
-            AllocationList *previousElement =
-                (AllocationList *)( element->mPrevious );
-            AllocationList *nextElement =
-                (AllocationList *)( element->mNext );
-            
-            // patch list
-            previousElement->mNext = (void *)( nextElement );
 
-            if( nextElement != NULL ) {
-                nextElement->mPrevious = (void *)( previousElement );
-                }
-            
-            free( element );
-            
+            // remove from list, whether or not types match
+            AllocationList *previousElement = (AllocationList *)(element->mPrevious);
+            AllocationList *nextElement = (AllocationList *)(element->mNext);
+
+            // patch list
+            previousElement->mNext = (void *)(nextElement);
+
+            if (nextElement != NULL)
+            {
+                nextElement->mPrevious = (void *)(previousElement);
+            }
+
+            free(element);
+
             mTotalDeallocationSize += allocationSize;
-            
-            
-            if( allocationType == inDeallocationType ) {
+
+            if (allocationType == inDeallocationType)
+            {
                 // found and types match
                 mLock->unlock();
 
                 // wipe this block of memory
-                clearMemory( inPointer, allocationSize );
+                clearMemory(inPointer, allocationSize);
                 return 0;
-                }
-            else {
+            }
+            else
+            {
                 // allocation types don't match
-                
-                printf( "Attempt to deallocate (0x%x) [%d bytes] with wrong"
-                        " delete form\n"
-                        "    %s:%d (location of original allocation)\n",
-                        (unsigned int)inPointer,
-                        allocationSize,
-                        allocFileName, allocLineNumber );
+
+                printf("Attempt to deallocate (0x%x) [%d bytes] with wrong"
+                       " delete form\n"
+                       "    %s:%d (location of original allocation)\n",
+                       (unsigned int)inPointer, allocationSize, allocFileName, allocLineNumber);
 
                 mLock->unlock();
-                
-                return 2;
-                }
-            
-            }
 
-        element = (AllocationList *)( element->mNext );
+                return 2;
+            }
         }
+
+        element = (AllocationList *)(element->mNext);
+    }
 
     // not found (delete of unallocated memory)
-    printf( "Attempt to deallocate (0x%x) unallocated memory\n",
-            (unsigned int)inPointer );
+    printf("Attempt to deallocate (0x%x) unallocated memory\n", (unsigned int)inPointer);
 
     mLock->unlock();
-    
+
     return 1;
-    }
+}
 
-
-
-void MemoryTrack::printLeaks() {
+void MemoryTrack::printLeaks()
+{
     mLock->lock();
 
-    printf( "\n\n---- debugMemory report ----\n" );
-    
-    printf( "Number of Allocations:  %d\n", mNumberOfAllocations );
-    printf( "Total allocations:      %d bytes\n", mTotalAllocationSize );
-    printf( "Total deallocations:    %d bytes\n", mTotalDeallocationSize );
-    
+    printf("\n\n---- debugMemory report ----\n");
+
+    printf("Number of Allocations:  %d\n", mNumberOfAllocations);
+    printf("Total allocations:      %d bytes\n", mTotalAllocationSize);
+    printf("Total deallocations:    %d bytes\n", mTotalDeallocationSize);
+
     int leakEstimate = mTotalAllocationSize - mTotalDeallocationSize;
 
+    AllocationList *element = (AllocationList *)(mListHead->mNext);
 
-    
-    AllocationList *element = (AllocationList *)( mListHead->mNext );
-
-    if( element == NULL ) {
-        printf( "No leaks detected.\n" );
-        }
-    else {
-        printf( "Leaks detected:\n" );
-        }
-
-    int leakSum = 0;
-    while( element != NULL ) {
-    
-        printf( "Not deallocated (0x%x) [%d bytes]\n"
-                "    %s:%d (location of original allocation)\n",
-                (unsigned int)( element->mPointer ),
-                element->mAllocationSize,
-                element->mFileName,
-                element->mLineNumber );
-
-        leakSum += element->mAllocationSize;
-        
-        element = (AllocationList *)( element->mNext );
-        }
-
-    
-    if( leakSum != leakEstimate ) {
-        printf( "Warning:  Leak sum does not equal leak estimate.\n" );
-        }
-
-    
-    printf( "Leaked memory:          %d bytes\n", leakSum );
-    
-    printf( "---- END debugMemory report ----\n\n" );
-
-    
-    mLock->unlock();
+    if (element == NULL)
+    {
+        printf("No leaks detected.\n");
+    }
+    else
+    {
+        printf("Leaks detected:\n");
     }
 
+    int leakSum = 0;
+    while (element != NULL)
+    {
 
+        printf("Not deallocated (0x%x) [%d bytes]\n"
+               "    %s:%d (location of original allocation)\n",
+               (unsigned int)(element->mPointer), element->mAllocationSize, element->mFileName, element->mLineNumber);
 
-void MemoryTrack::clearMemory( void *inPointer, unsigned int inSize ) {
+        leakSum += element->mAllocationSize;
+
+        element = (AllocationList *)(element->mNext);
+    }
+
+    if (leakSum != leakEstimate)
+    {
+        printf("Warning:  Leak sum does not equal leak estimate.\n");
+    }
+
+    printf("Leaked memory:          %d bytes\n", leakSum);
+
+    printf("---- END debugMemory report ----\n\n");
+
+    mLock->unlock();
+}
+
+void MemoryTrack::clearMemory(void *inPointer, unsigned int inSize)
+{
 
     unsigned char *charArray = (unsigned char *)inPointer;
 
-    for( unsigned int i=0; i<inSize; i++ ) {
+    for (unsigned int i = 0; i < inSize; i++)
+    {
         charArray[i] = (unsigned char)0xAA;
-        }
-
     }
-
-
+}
 
 #endif
-
-
-
-

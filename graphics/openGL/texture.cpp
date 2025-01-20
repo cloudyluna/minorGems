@@ -22,19 +22,19 @@
 
 
 
-    This is about as simple of a texture mapping tutorial that you will get.  
+    This is about as simple of a texture mapping tutorial that you will get.
 
-    The program loads "texture.tga" and displays it onto a quad.  
+    The program loads "texture.tga" and displays it onto a quad.
 
 
 
-    If you want to compile this make sure that you link too the following 
+    If you want to compile this make sure that you link too the following
 
     libraries: opegl32.lib glu32.lib glut32.lib
 
 */
 
-#define APP_NAME                "OpenGL Tutor : Texture"
+#define APP_NAME "OpenGL Tutor : Texture"
 
 #include "tga.h"
 
@@ -44,13 +44,9 @@
 
 #include "gl/glut.h"
 
-
-
 int winW = 640; /* window width */
 
 int winH = 480; /* window height */
-
-
 
 /*
 
@@ -62,9 +58,9 @@ drawFace
 
 
 
-Draws a textured face.  Take note that the texture vertex must come BEFORE the 
+Draws a textured face.  Take note that the texture vertex must come BEFORE the
 
-vertex that it will be assigned too. 
+vertex that it will be assigned too.
 
 
 
@@ -88,137 +84,89 @@ Texture Coordinate Orrientation
 
 */
 
-void drawFace (void)
+void drawFace(void)
 
 {
 
-//    glEnable (GL_TEXTURE_2D); /* enable texture mapping */
+    //    glEnable (GL_TEXTURE_2D); /* enable texture mapping */
 
-//    glBindTexture (GL_TEXTURE_2D, 13); /* bind to our texture, has id of 13 */
+    //    glBindTexture (GL_TEXTURE_2D, 13); /* bind to our texture, has id of 13 */
 
+    glBegin(GL_QUADS);
 
+    // glTexCoord2f (0.0f,0.0f); /* lower left corner of image */
 
-    glBegin (GL_QUADS);
+    glColor3f(1.0, 1.0, 1.0);
 
-        //glTexCoord2f (0.0f,0.0f); /* lower left corner of image */
+    glVertex3f(-10.0f, -10.0f, 0.0f);
 
-        glColor3f(1.0, 1.0, 1.0);
+    // glTexCoord2f (1.0f, 0.0f); /* lower right corner of image */
 
-        glVertex3f (-10.0f, -10.0f, 0.0f);
+    glColor3f(0, 1.0, 1.0);
 
-        //glTexCoord2f (1.0f, 0.0f); /* lower right corner of image */
+    glVertex3f(10.0f, -10.0f, 0.0f);
 
-        glColor3f(0, 1.0, 1.0);
+    // glTexCoord2f (1.0f, 1.0f); /* upper right corner of image */
 
-        glVertex3f (10.0f, -10.0f, 0.0f);
+    glColor3f(1.0, 1.0, 0);
 
-        //glTexCoord2f (1.0f, 1.0f); /* upper right corner of image */
+    glVertex3f(10.0f, 10.0f, 0.0f);
 
-        glColor3f(1.0, 1.0, 0);
+    // glTexCoord2f (0.0f, 1.0f); /* upper left corner of image */
 
-        glVertex3f (10.0f, 10.0f, 0.0f);
+    glColor3f(1.0, 0, 0);
 
-        //glTexCoord2f (0.0f, 1.0f); /* upper left corner of image */
+    glVertex3f(-10.0f, 10.0f, 0.0f);
 
-        glColor3f(1.0, 0, 0);
+    glEnd();
 
-        glVertex3f (-10.0f, 10.0f, 0.0f);
-
-    glEnd ();
-
-
-
- //   glDisable (GL_TEXTURE_2D); /* disable texture mapping */
-
+    //   glDisable (GL_TEXTURE_2D); /* disable texture mapping */
 }
 
-
-
-
-
-
-
-void drawSphere (void)
+void drawSphere(void)
 
 {
 
-    /* 
+    /*
 
-        This sphere is going to be rotated around the *current axis*.  This is 
+        This sphere is going to be rotated around the *current axis*.  This is
 
         because the model was first rotated and then translated.
 
     */
 
-    glPushMatrix ();
+    glPushMatrix();
 
+    glRotatef(rotate, axis[0], axis[1], axis[2]);
 
+    glTranslatef(-15.0, 10.0, 5.0);
 
-    glRotatef (rotate, axis[0], axis[1], axis[2]);
+    glColor3f(1.0, 0.0, 0.0);
 
+    glutWireSphere(5.0, 6.0, 6.0);
 
+    glPopMatrix();
 
-    glTranslatef (-15.0, 10.0, 5.0);
+    /*
 
+        This sphere is going to be rotated around the its own center.  This is
 
-
-    glColor3f (1.0, 0.0, 0.0);
-
-
-
-    glutWireSphere (5.0, 6.0, 6.0);
-
-
-
-    glPopMatrix ();
-
-
-
-    /* 
-
-        This sphere is going to be rotated around the its own center.  This is 
-
-        because the model was first translated and then rotated.  
+        because the model was first translated and then rotated.
 
     */
 
-    glPushMatrix ();
+    glPushMatrix();
 
+    glTranslatef(5.0, 10.0, 0.0);
 
+    glRotatef(rotate, axis[0], axis[1], axis[2]);
 
-    glTranslatef (5.0, 10.0, 0.0);
+    glColor3f(0.0, 1.0, 0.0);
 
+    glutWireSphere(2.0, 6.0, 6.0);
 
-
-    glRotatef (rotate, axis[0], axis[1], axis[2]);
-
-
-
-    glColor3f (0.0, 1.0, 0.0);
-
-
-
-    glutWireSphere (2.0, 6.0, 6.0);
-
-
-
-    glPopMatrix ();
-
+    glPopMatrix();
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 /*
 
@@ -234,7 +182,7 @@ Our display function
 
 */
 
-void glutDisplay (void)
+void glutDisplay(void)
 
 {
 
@@ -242,28 +190,19 @@ void glutDisplay (void)
 
         return;
 
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+    glMatrixMode(GL_MODELVIEW);
 
-    glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glLoadIdentity();
 
+    glTranslatef(0, 0, -50); /* eye position */
 
+    drawFace();
 
-	glMatrixMode (GL_MODELVIEW);
+    drawSphere();
 
-	glLoadIdentity ();
-
-	glTranslatef (0, 0, -50); /* eye position */
-
-
-
-    drawFace ();
-
-    drawSphere ();
-
-
-
-	glutSwapBuffers();
-
+    glutSwapBuffers();
 }
 
 /*
@@ -272,42 +211,33 @@ void glutDisplay (void)
 
 glutResize
 
-=============     
+=============
 
 
 
-Resize function.  Called when our window is created and resized.  
+Resize function.  Called when our window is created and resized.
 
 */
 
-void glutResize (int w, int h)
+void glutResize(int w, int h)
 
-{	
+{
 
-	winW = w;
+    winW = w;
 
-	winH = h;
+    winH = h;
 
-    
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glViewport(0, 0, winW, winH);
 
-    glViewport (0, 0, winW, winH);
+    glMatrixMode(GL_PROJECTION);
 
+    glLoadIdentity();
 
+    gluPerspective(90, winW / winH, 1, 9999);
 
-	glMatrixMode (GL_PROJECTION);
-
-    glLoadIdentity ();
-
-
-
-	gluPerspective (90, winW / winH, 1, 9999);
-
-
-
-	glutPostRedisplay ();
-
+    glutPostRedisplay();
 }
 
 /*
@@ -316,7 +246,7 @@ void glutResize (int w, int h)
 
 glutKeyboard
 
-=============     
+=============
 
 
 
@@ -324,7 +254,7 @@ Keyboard handler.
 
 */
 
-void glutKeyboard (unsigned char key, int x, int y)
+void glutKeyboard(unsigned char key, int x, int y)
 
 {
 
@@ -334,18 +264,16 @@ void glutKeyboard (unsigned char key, int x, int y)
 
         /* exit the program */
 
-        case 27:
+    case 27:
 
-        case 'q':
+    case 'q':
 
-        case 'Q':
+    case 'Q':
 
-            exit (1);
+        exit(1);
 
         break;
-
     }
-
 }
 
 /*
@@ -358,50 +286,40 @@ glInit
 
 
 
-Sets up some OpenGL states and loads image.   
+Sets up some OpenGL states and loads image.
 
 
 
 */
 
-void glInit (void)
+void glInit(void)
 
 {
 
-  glEnable (GL_DEPTH_TEST);
+    glEnable(GL_DEPTH_TEST);
 
-  glPolygonMode (GL_FRONT_AND_BACK, GL_FILL);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
-
-
-  loadTGA ("texture.tga", 13);
-
-
-
+    loadTGA("texture.tga", 13);
 }
 
-void main (void)
+void main(void)
 
 {
 
-	glutInitDisplayMode (GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH | GLUT_FULLSCREEN);
+    glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH | GLUT_FULLSCREEN);
 
-	glutInitWindowSize (winW,winH);
+    glutInitWindowSize(winW, winH);
 
-	glutCreateWindow (APP_NAME);
+    glutCreateWindow(APP_NAME);
 
-	glutKeyboardFunc (glutKeyboard);
+    glutKeyboardFunc(glutKeyboard);
 
-	glutDisplayFunc (glutDisplay);
+    glutDisplayFunc(glutDisplay);
 
-	glutReshapeFunc (glutResize);
+    glutReshapeFunc(glutResize);
 
+    glInit();
 
-
-	glInit ();
-
-
-
-	glutMainLoop(); // we never return...
-
+    glutMainLoop(); // we never return...
 }

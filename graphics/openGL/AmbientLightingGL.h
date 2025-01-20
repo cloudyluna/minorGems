@@ -2,73 +2,61 @@
  * Modification History
  *
  * 2001-January-17		Jason Rohrer
- * Created. 
+ * Created.
  */
- 
- 
+
 #ifndef AMBIENT_LIGHTING_GL_INCLUDED
 #define AMBIENT_LIGHTING_GL_INCLUDED
- 
-#include "LightingGL.h" 
- 
+
+#include "LightingGL.h"
+
 /**
- * LightingGL implementation that uses constant, specifiable 
+ * LightingGL implementation that uses constant, specifiable
  * light values everywhere.  Most useful when combined with
  * directional or point lightings using MultiLighting.
  *
  * Setting color to full white makes this lighting equivalent
  * to a NoLightingGL.
  *
- * @author Jason Rohrer 
+ * @author Jason Rohrer
  */
-class AmbientLightingGL : public LightingGL{ 
-	
-	public:
-		
-		/**
-		 * Constructs an AmbientLighting.
-		 *
-		 * @param inColor color and intensity of lighting.
-		 *   Is not copied, so cannot be accessed again by caller.
-		 */
-		AmbientLightingGL( Color *inColor );
-		
+class AmbientLightingGL : public LightingGL
+{
 
-		~AmbientLightingGL();
+  public:
+    /**
+     * Constructs an AmbientLighting.
+     *
+     * @param inColor color and intensity of lighting.
+     *   Is not copied, so cannot be accessed again by caller.
+     */
+    AmbientLightingGL(Color *inColor);
 
-		
-		// implements LightingGL interface
-		void getLighting( Vector3D *inPoint, Vector3D *inNormal,
-			Color *outColor );
-	
-	private:
-		Color *mColor;
-		
-	};
+    ~AmbientLightingGL();
 
+    // implements LightingGL interface
+    void getLighting(Vector3D *inPoint, Vector3D *inNormal, Color *outColor);
 
-inline AmbientLightingGL::AmbientLightingGL( Color *inColor )
-	: mColor( inColor ) {
+  private:
+    Color *mColor;
+};
 
-	}
+inline AmbientLightingGL::AmbientLightingGL(Color *inColor) : mColor(inColor)
+{
+}
 
+inline AmbientLightingGL::~AmbientLightingGL()
+{
 
+    delete mColor;
+}
 
-inline AmbientLightingGL::~AmbientLightingGL() {
+inline void AmbientLightingGL::getLighting(Vector3D *inPoint, Vector3D *inNormal, Color *outColor)
+{
 
-	delete mColor;
-	}
+    outColor->r = mColor->r;
+    outColor->g = mColor->g;
+    outColor->b = mColor->b;
+}
 
-
-
-inline void AmbientLightingGL::getLighting( Vector3D *inPoint, 
-	Vector3D *inNormal, Color *outColor ) {
-	
-	outColor->r = mColor->r;
-	outColor->g = mColor->g;
-	outColor->b = mColor->b;	
-	}
-
-
-	
 #endif

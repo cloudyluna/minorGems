@@ -32,15 +32,13 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-
-#define TRACE_REALTIME_EVENTS     (0)   /* Keep log of various real-time events. */
-#define MAX_TRACE_RECORDS      (2048)
+#define TRACE_REALTIME_EVENTS (0) /* Keep log of various real-time events. */
+#define MAX_TRACE_RECORDS (2048)
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif /* __cplusplus */
-
 
     /************************************************************************************/
     /****************** Prototypes ******************************************************/
@@ -50,13 +48,13 @@ extern "C"
 
     void DumpTraceMessages();
     void ResetTraceMessages();
-    void AddTraceMessage( char *msg, int data );
+    void AddTraceMessage(char *msg, int data);
 
 #else
 
-#define AddTraceMessage(msg,data) /* noop */
-#define ResetTraceMessages() /* noop */
-#define DumpTraceMessages() /* noop */
+#define AddTraceMessage(msg, data) /* noop */
+#define ResetTraceMessages()       /* noop */
+#define DumpTraceMessages()        /* noop */
 
 #endif
 

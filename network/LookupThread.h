@@ -11,8 +11,6 @@
  * Changed to copy inAddress internally.
  */
 
-
-
 #ifndef LOOKUP_THREAD_CLASS_INCLUDED
 #define LOOKUP_THREAD_CLASS_INCLUDED
 
@@ -21,61 +19,49 @@
 
 #include "minorGems/network/HostAddress.h"
 
-
-
 /**
  * Thread that performs DNS lookup on a host name.
  *
  * @author Jason Rohrer
  */
-class LookupThread : public FinishedSignalThread {
-	
-	public:
-		/**
-         * Constructs and starts a lookup thread.
-         *
-		 * @param inAddress the address to lookup.  Destroyed by caller,
-         *   copied internally.
-		 */
-		LookupThread( HostAddress *inAddress );
-        
-        
-        // joins and destroys this thread
-        ~LookupThread();
-        
-		
+class LookupThread : public FinishedSignalThread
+{
 
-        /**
-         * Returns true if lookup done.
-         */
-        char isLookupDone();
-        
+  public:
+    /**
+     * Constructs and starts a lookup thread.
+     *
+     * @param inAddress the address to lookup.  Destroyed by caller,
+     *   copied internally.
+     */
+    LookupThread(HostAddress *inAddress);
 
+    // joins and destroys this thread
+    ~LookupThread();
 
-        /**
-         * Returns numerical address result, or NULL if lookup failed.
-         *
-         * Must be destroyed by caller if non-NULL.
-         */
-        HostAddress *getResult();
+    /**
+     * Returns true if lookup done.
+     */
+    char isLookupDone();
 
-        
+    /**
+     * Returns numerical address result, or NULL if lookup failed.
+     *
+     * Must be destroyed by caller if non-NULL.
+     */
+    HostAddress *getResult();
 
-		// override the run method from Thread
-		void run();
-	
-	private:
-        MutexLock mLock;
-        
-        HostAddress *mAddress;
-        
-        HostAddress *mNumericalAddress;
-        
-        char mLookupDone;
-                
-        
-        
-	};
+    // override the run method from Thread
+    void run();
 
-	
+  private:
+    MutexLock mLock;
+
+    HostAddress *mAddress;
+
+    HostAddress *mNumericalAddress;
+
+    char mLookupDone;
+};
+
 #endif

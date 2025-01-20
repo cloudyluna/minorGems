@@ -9,74 +9,54 @@
  * Changed to sleep on a semaphore to allow sleep to be interrupted.
  */
 
-
-
 #ifndef FINISHED_SIGNAL_THREAD_MANAGER_INCLUDED
 #define FINISHED_SIGNAL_THREAD_MANAGER_INCLUDED
 
-
-
 #include "minorGems/system/FinishedSignalThread.h"
 
-#include "minorGems/util/SimpleVector.h"
-#include "minorGems/system/Thread.h"
-#include "minorGems/system/MutexLock.h"
 #include "minorGems/system/BinarySemaphore.h"
-
-
+#include "minorGems/system/MutexLock.h"
+#include "minorGems/system/Thread.h"
+#include "minorGems/util/SimpleVector.h"
 
 /**
  * A thread that manages the destruction of FinishedSignalThreads.
  *
  * @author Jason Rohrer.
  */
-class FinishedSignalThreadManager : public Thread {
+class FinishedSignalThreadManager : public Thread
+{
 
+  public:
+    /**
+     * Constructs and starts this manager.
+     */
+    FinishedSignalThreadManager();
 
+    /**
+     * Stops and destroys this manager.
+     */
+    ~FinishedSignalThreadManager();
 
-    public:
-        
-        /**
-         * Constructs and starts this manager.
-         */
-        FinishedSignalThreadManager();
+    /**
+     * Adds a thread to this manager.
+     *
+     * @param inThread the thread to add.
+     *   Will be destroyed by this class.
+     */
+    void addThread(FinishedSignalThread *inThread);
 
+    // implements the Thread interface
+    void run();
 
-        
-        /**
-         * Stops and destroys this manager.
-         */
-        ~FinishedSignalThreadManager();
+  protected:
+    MutexLock *mLock;
 
-        
+    SimpleVector<FinishedSignalThread *> *mThreadVector;
 
-        /**
-         * Adds a thread to this manager.
-         *
-         * @param inThread the thread to add.
-         *   Will be destroyed by this class.
-         */
-        void addThread( FinishedSignalThread *inThread );
+    char mStopSignal;
 
-        
-
-        // implements the Thread interface
-        void run();
-
-
-        
-    protected:
-        MutexLock *mLock;
-
-        SimpleVector<FinishedSignalThread *> *mThreadVector;
-        
-        char mStopSignal;
-
-        BinarySemaphore *mSleepSemaphore;
-        
-    };
-
-
-
+    BinarySemaphore *mSleepSemaphore;
+};
 
 #endif

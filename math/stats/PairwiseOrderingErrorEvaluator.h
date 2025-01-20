@@ -4,7 +4,7 @@
  * 2000-September-28		Jason Rohrer
  * Created.
  */
- 
+
 #ifndef PAIRWISE_ORDERING_ERROR_EVALUATOR_INCLUDED
 #define PAIRWISE_ORDERING_ERROR_EVALUATOR_INCLUDED
 
@@ -19,33 +19,33 @@
  * I.e., if A[i] > A[j], then B[i] < B[j] adds 1 to the error term,
  * while B[i] > B[j] adds 0 to the error term.
  *
- * @author Jason Rohrer 
+ * @author Jason Rohrer
  */
-class PairwiseOrderingErrorEvaluator : public ErrorEvaluator {
-	
-	// implements ErrorEvaluator interface
-	double evaluate( double *inVectorA, 
-		double *inVectorB, int inLength );
+class PairwiseOrderingErrorEvaluator : public ErrorEvaluator
+{
 
-	};
+    // implements ErrorEvaluator interface
+    double evaluate(double *inVectorA, double *inVectorB, int inLength);
+};
 
-inline double PairwiseOrderingErrorEvaluator::evaluate( double *inVectorA, 
-	double *inVectorB, int inLength ) {
-	
-	double sum = 0;
-	// examine all pairs of components in the vectors
-	for( int i=0; i<inLength; i++ ) {
-		for( int j=i+1; j<inLength; j++ ) {
-			if( ( inVectorA[i] > inVectorA[j] &&
-				inVectorB[i] <= inVectorB[j] ) ||
-				( inVectorA[i] < inVectorA[j] &&
-				inVectorB[i] >= inVectorB[j] ) ) {
-				
-				sum++;
-				}
-			}
-		}
-	return sum;
-	}
+inline double PairwiseOrderingErrorEvaluator::evaluate(double *inVectorA, double *inVectorB, int inLength)
+{
+
+    double sum = 0;
+    // examine all pairs of components in the vectors
+    for (int i = 0; i < inLength; i++)
+    {
+        for (int j = i + 1; j < inLength; j++)
+        {
+            if ((inVectorA[i] > inVectorA[j] && inVectorB[i] <= inVectorB[j]) ||
+                (inVectorA[i] < inVectorA[j] && inVectorB[i] >= inVectorB[j]))
+            {
+
+                sum++;
+            }
+        }
+    }
+    return sum;
+}
 
 #endif

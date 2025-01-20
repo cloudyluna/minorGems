@@ -14,116 +14,89 @@
  * Changed to use updated Thread interface.
  */
 
-
-
 #include "MessagePerSecondLimiter.h"
 
-
-#include "minorGems/system/Time.h"
 #include "minorGems/system/Thread.h"
+#include "minorGems/system/Time.h"
 
+MessagePerSecondLimiter::MessagePerSecondLimiter(double inLimitPerSecond)
+    : mLock(new MutexLock()), mTransmitLock(new MutexLock()), mLimitPerSecond(inLimitPerSecond)
+{
 
-
-MessagePerSecondLimiter::MessagePerSecondLimiter( double inLimitPerSecond )
-    : mLock( new MutexLock() ),
-      mTransmitLock( new MutexLock() ),
-      mLimitPerSecond( inLimitPerSecond ) {
-
-    if( mLimitPerSecond != -1 ) {
-        mMillisecondsBetweenMessages = (int)( 1000 / mLimitPerSecond );
-        }
-    else {
+    if (mLimitPerSecond != -1)
+    {
+        mMillisecondsBetweenMessages = (int)(1000 / mLimitPerSecond);
+    }
+    else
+    {
         mMillisecondsBetweenMessages = 0;
-        }
-    
-    Time::getCurrentTime( &mSecondTimeOfLastMessage,
-                          &mMillisecondTimeOfLastMessage );
-    
     }
 
+    Time::getCurrentTime(&mSecondTimeOfLastMessage, &mMillisecondTimeOfLastMessage);
+}
 
-        
-MessagePerSecondLimiter::~MessagePerSecondLimiter() {
+MessagePerSecondLimiter::~MessagePerSecondLimiter()
+{
     delete mLock;
     delete mTransmitLock;
-    }
+}
 
-
-        
-void MessagePerSecondLimiter::setLimit( double inLimitPerSecond ) {
+void MessagePerSecondLimiter::setLimit(double inLimitPerSecond)
+{
     mLock->lock();
     mLimitPerSecond = inLimitPerSecond;
 
-    if( mLimitPerSecond != -1 ) {
-        mMillisecondsBetweenMessages = (int)( 1000 / mLimitPerSecond );
-        }
-    else {
+    if (mLimitPerSecond != -1)
+    {
+        mMillisecondsBetweenMessages = (int)(1000 / mLimitPerSecond);
+    }
+    else
+    {
         mMillisecondsBetweenMessages = 0;
-        }
-
-
-    mLock->unlock();
     }
 
+    mLock->unlock();
+}
 
-        
-double MessagePerSecondLimiter::getLimit() {
+double MessagePerSecondLimiter::getLimit()
+{
     mLock->lock();
     double limit = mLimitPerSecond;
     mLock->unlock();
 
     return limit;
-    }
+}
 
-        
-
-void MessagePerSecondLimiter::messageTransmitted() {
+void MessagePerSecondLimiter::messageTransmitted()
+{
     // allow only one transmitter to report at a time
     mTransmitLock->lock();
-
 
     // protect our variables (make sure settings functions are not
     // called while we touch the variables)
     mLock->lock();
 
-
     unsigned long millisecondsSinceLastMessage =
-        Time::getMillisecondsSince( mSecondTimeOfLastMessage,
-                                    mMillisecondTimeOfLastMessage );
+        Time::getMillisecondsSince(mSecondTimeOfLastMessage, mMillisecondTimeOfLastMessage);
 
-    
-    if( millisecondsSinceLastMessage < mMillisecondsBetweenMessages ) {
+    if (millisecondsSinceLastMessage < mMillisecondsBetweenMessages)
+    {
         // this message is coming too soon after last message
-        
+
         // sleep
-        unsigned long sleepTime =
-            mMillisecondsBetweenMessages -
-            millisecondsSinceLastMessage;
+        unsigned long sleepTime = mMillisecondsBetweenMessages - millisecondsSinceLastMessage;
 
         // unlock main lock befor sleeping so that settings can be changed
         mLock->unlock();
-        
-        Thread::staticSleep( sleepTime );
+
+        Thread::staticSleep(sleepTime);
 
         // relock
         mLock->lock();
-        }
-
-
-    Time::getCurrentTime( &mSecondTimeOfLastMessage,
-                          &mMillisecondTimeOfLastMessage );
-    mLock->unlock();
-
-    
-    mTransmitLock->unlock();
     }
 
+    Time::getCurrentTime(&mSecondTimeOfLastMessage, &mMillisecondTimeOfLastMessage);
+    mLock->unlock();
 
-
-
-
-
-
-
-
-
+    mTransmitLock->unlock();
+}

@@ -36,7 +36,7 @@
  * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  *
  */
- 
+
 #include "portaudio.h"
 
 #ifdef __cplusplus
@@ -45,7 +45,7 @@ extern "C"
 #endif /* __cplusplus */
 
 #ifndef SUPPORT_AUDIO_CAPTURE
-#define SUPPORT_AUDIO_CAPTURE  (1)
+#define SUPPORT_AUDIO_CAPTURE (1)
 #endif
 
 #include <inttypes.h>
@@ -63,127 +63,116 @@ extern "C"
     typedef uint16_t uint16;
 #endif
 
-/* Used to convert between various sample formats. */
-typedef void (PortAudioConverter)(
-    void *inputBuffer, int inputStride,
-    void *outputBuffer, int outputStride,
-    int numSamples );
+    /* Used to convert between various sample formats. */
+    typedef void(PortAudioConverter)(void *inputBuffer, int inputStride, void *outputBuffer, int outputStride,
+                                     int numSamples);
 
-#define PA_MAGIC    (0x18273645)
+#define PA_MAGIC (0x18273645)
 
-/************************************************************************************/
-/****************** Structures ******************************************************/
-/************************************************************************************/
+    /************************************************************************************/
+    /****************** Structures ******************************************************/
+    /************************************************************************************/
 
-typedef struct internalPortAudioStream
-{
-    uint32                    past_Magic;  /* ID for struct to catch bugs. */
-    
-    /* Begin user specified information. */
-    uint32                    past_FramesPerUserBuffer;
-    uint32                    past_NumUserBuffers;
-    double                    past_SampleRate;     /* Closest supported sample rate. */
-    int                       past_NumInputChannels;
-    int                       past_NumOutputChannels;
-    PaDeviceID                past_InputDeviceID;
-    PaDeviceID                past_OutputDeviceID;
-    PaSampleFormat            past_InputSampleFormat;
-    PaSampleFormat            past_OutputSampleFormat;
-    PortAudioCallback        *past_Callback;
-    void                     *past_UserData;
-    uint32                    past_Flags;
-    /* End user specified information. */
-    
-    void                     *past_DeviceData;
-    PaSampleFormat            past_NativeOutputSampleFormat;
-    PaSampleFormat            past_NativeInputSampleFormat;
+    typedef struct internalPortAudioStream
+    {
+        uint32 past_Magic; /* ID for struct to catch bugs. */
 
-    /* Flags for communicating between foreground and background. */
-    volatile int              past_IsActive;      /* Background is still playing. */
-    volatile int              past_StopSoon;      /* Background should keep playing when buffers empty. */
-    volatile int              past_StopNow;       /* Background should stop playing now. */
-    /* These buffers are used when the native format does not match the user format. */
-    void                     *past_InputBuffer;
-    uint32                    past_InputBufferSize; /* Size in bytes of the input buffer. */
-    void                     *past_OutputBuffer;
-    uint32                    past_OutputBufferSize;
-    /* Measurements */
-    uint32                    past_NumCallbacks;
-    PaTimestamp               past_FrameCount;    /* Frames output to buffer. */
-    /* For measuring CPU utilization. */
-    double                    past_AverageInsideCount;
-    double                    past_AverageTotalCount;
-    double                    past_Usage;
-    int                       past_IfLastExitValid;
-    /* Format Conversion */
-    /* These are setup by PaConversion_Setup() */
-    PortAudioConverter       *past_InputConversionProc;
-    int                       past_InputConversionSourceStride;
-    int                       past_InputConversionTargetStride;
-    PortAudioConverter       *past_OutputConversionProc;
-    int                       past_OutputConversionSourceStride;
-    int                       past_OutputConversionTargetStride;
-}
-internalPortAudioStream;
+        /* Begin user specified information. */
+        uint32 past_FramesPerUserBuffer;
+        uint32 past_NumUserBuffers;
+        double past_SampleRate; /* Closest supported sample rate. */
+        int past_NumInputChannels;
+        int past_NumOutputChannels;
+        PaDeviceID past_InputDeviceID;
+        PaDeviceID past_OutputDeviceID;
+        PaSampleFormat past_InputSampleFormat;
+        PaSampleFormat past_OutputSampleFormat;
+        PortAudioCallback *past_Callback;
+        void *past_UserData;
+        uint32 past_Flags;
+        /* End user specified information. */
 
-/************************************************************************************/
-/******** These functions must be provided by a platform implementation. ************/
-/************************************************************************************/
+        void *past_DeviceData;
+        PaSampleFormat past_NativeOutputSampleFormat;
+        PaSampleFormat past_NativeInputSampleFormat;
 
-PaError PaHost_Init( void );
-PaError PaHost_Term( void );
+        /* Flags for communicating between foreground and background. */
+        volatile int past_IsActive; /* Background is still playing. */
+        volatile int past_StopSoon; /* Background should keep playing when buffers empty. */
+        volatile int past_StopNow;  /* Background should stop playing now. */
+        /* These buffers are used when the native format does not match the user format. */
+        void *past_InputBuffer;
+        uint32 past_InputBufferSize; /* Size in bytes of the input buffer. */
+        void *past_OutputBuffer;
+        uint32 past_OutputBufferSize;
+        /* Measurements */
+        uint32 past_NumCallbacks;
+        PaTimestamp past_FrameCount; /* Frames output to buffer. */
+        /* For measuring CPU utilization. */
+        double past_AverageInsideCount;
+        double past_AverageTotalCount;
+        double past_Usage;
+        int past_IfLastExitValid;
+        /* Format Conversion */
+        /* These are setup by PaConversion_Setup() */
+        PortAudioConverter *past_InputConversionProc;
+        int past_InputConversionSourceStride;
+        int past_InputConversionTargetStride;
+        PortAudioConverter *past_OutputConversionProc;
+        int past_OutputConversionSourceStride;
+        int past_OutputConversionTargetStride;
+    } internalPortAudioStream;
 
-PaError PaHost_OpenStream( internalPortAudioStream   *past );
-PaError PaHost_CloseStream( internalPortAudioStream   *past );
+    /************************************************************************************/
+    /******** These functions must be provided by a platform implementation. ************/
+    /************************************************************************************/
 
-PaError PaHost_StartOutput( internalPortAudioStream   *past );
-PaError PaHost_StopOutput( internalPortAudioStream   *past, int abort );
-PaError PaHost_StartInput( internalPortAudioStream   *past );
-PaError PaHost_StopInput( internalPortAudioStream   *past, int abort );
-PaError PaHost_StartEngine( internalPortAudioStream   *past );
-PaError PaHost_StopEngine( internalPortAudioStream *past, int abort );
-PaError PaHost_StreamActive( internalPortAudioStream   *past );
+    PaError PaHost_Init(void);
+    PaError PaHost_Term(void);
 
-void   *PaHost_AllocateFastMemory( long numBytes );
-void    PaHost_FreeFastMemory( void *addr, long numBytes );
+    PaError PaHost_OpenStream(internalPortAudioStream *past);
+    PaError PaHost_CloseStream(internalPortAudioStream *past);
 
-/* This only called if PA_VALIDATE_RATE IS CALLED. */
-PaError PaHost_ValidateSampleRate( PaDeviceID id, double requestedFrameRate,
-                                   double *closestFrameRatePtr );
+    PaError PaHost_StartOutput(internalPortAudioStream *past);
+    PaError PaHost_StopOutput(internalPortAudioStream *past, int abort);
+    PaError PaHost_StartInput(internalPortAudioStream *past);
+    PaError PaHost_StopInput(internalPortAudioStream *past, int abort);
+    PaError PaHost_StartEngine(internalPortAudioStream *past);
+    PaError PaHost_StopEngine(internalPortAudioStream *past, int abort);
+    PaError PaHost_StreamActive(internalPortAudioStream *past);
 
-/**********************************************************************/
-/************ Common Utility Routines provided by PA ******************/
-/**********************************************************************/
+    void *PaHost_AllocateFastMemory(long numBytes);
+    void PaHost_FreeFastMemory(void *addr, long numBytes);
 
-/* PaHost_IsInitialized() returns non-zero if PA is initialized, 0 otherwise */
-int PaHost_IsInitialized( void );
+    /* This only called if PA_VALIDATE_RATE IS CALLED. */
+    PaError PaHost_ValidateSampleRate(PaDeviceID id, double requestedFrameRate, double *closestFrameRatePtr);
 
-internalPortAudioStream* PaHost_GetStreamRepresentation( PortAudioStream *stream );
+    /**********************************************************************/
+    /************ Common Utility Routines provided by PA ******************/
+    /**********************************************************************/
 
-int PaHost_FindClosestTableEntry( double allowableError,  const double *rateTable,
-                                  int numRates, double frameRate );
+    /* PaHost_IsInitialized() returns non-zero if PA is initialized, 0 otherwise */
+    int PaHost_IsInitialized(void);
 
-long Pa_CallConvertInt16( internalPortAudioStream   *past,
-                          short *nativeInputBuffer,
-                          short *nativeOutputBuffer );
-                          
+    internalPortAudioStream *PaHost_GetStreamRepresentation(PortAudioStream *stream);
+
+    int PaHost_FindClosestTableEntry(double allowableError, const double *rateTable, int numRates, double frameRate);
+
+    long Pa_CallConvertInt16(internalPortAudioStream *past, short *nativeInputBuffer, short *nativeOutputBuffer);
+
 /* Calculate 2 LSB dither signal with a triangular distribution.
 ** Ranged properly for adding to a 32 bit 1.31 fixed point value prior to >>15.
 ** Range of output is +/- 65535
 ** Multiply by PA_DITHER_SCALE to get a float between -2.0 and 2.0. */
-#define PA_DITHER_BITS   (15)
-#define PA_DITHER_SCALE  (1.0f / ((1<<PA_DITHER_BITS)-1))
-long PaConvert_TriangularDither( void );
+#define PA_DITHER_BITS (15)
+#define PA_DITHER_SCALE (1.0f / ((1 << PA_DITHER_BITS) - 1))
+    long PaConvert_TriangularDither(void);
 
-PaError PaConvert_SetupInput( internalPortAudioStream   *past,
-    PaSampleFormat   nativeInputSampleFormat );
+    PaError PaConvert_SetupInput(internalPortAudioStream *past, PaSampleFormat nativeInputSampleFormat);
 
-PaError PaConvert_SetupOutput( internalPortAudioStream   *past,
-    PaSampleFormat   nativeOutputSampleFormat );
+    PaError PaConvert_SetupOutput(internalPortAudioStream *past, PaSampleFormat nativeOutputSampleFormat);
 
-long PaConvert_Process( internalPortAudioStream   *past,
-            void *nativeInputBuffer,
-            void *nativeOutputBuffer );
+    long PaConvert_Process(internalPortAudioStream *past, void *nativeInputBuffer, void *nativeOutputBuffer);
 
 #ifdef __cplusplus
 }

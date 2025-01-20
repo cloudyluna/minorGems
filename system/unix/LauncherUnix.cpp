@@ -5,29 +5,22 @@
  * Created.
  */
 
-
-
 #include "minorGems/system/Launcher.h"
 
-#include <unistd.h>
 #include <stdarg.h>
+#include <unistd.h>
 
+void Launcher::launchCommand(char *inCommandName, char **inArguments)
+{
 
-void Launcher::launchCommand( char *inCommandName,
-                              char **inArguments ) {
-
-    
     int forkValue = fork();
 
-    if( forkValue == 0 ) {
+    if (forkValue == 0)
+    {
         // we're in child process, so exec command
-        
-        execvp( inCommandName, inArguments );
+
+        execvp(inCommandName, inArguments);
 
         // we'll never return from this call
-        }
-    
     }
-
-
-
+}

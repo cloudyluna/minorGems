@@ -1,13 +1,10 @@
 
 
-
 char isUpdatePlatformSupported();
-
-
 
 // returns true if update process started, or false if
 // auto-update not available
-char startUpdate( char *inUpdateServerURL, int inOldVersionNumber );
+char startUpdate(char *inUpdateServerURL, int inOldVersionNumber);
 
 // take anoter non-blocking step
 // return 1 if request complete
@@ -19,18 +16,13 @@ int stepUpdate();
 // was a write error (likely due to file permissions)
 char wasUpdateWriteError();
 
-
-
 // return fraction of update completion from 0 to 1
 float getUpdateProgress();
-
 
 // frees resources associated with an update
 // if update is not complete, this cancels it (possibly in a partial state)
 // if hostname lookup is not complete, this call might block.
 void clearUpdate();
-
-
 
 // should be called from updated client after it loads
 // does post-update cleanup that cannot be done from old exe.

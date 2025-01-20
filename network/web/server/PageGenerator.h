@@ -23,81 +23,63 @@
  * Moved into minorGems.
  */
 
-
-
 #ifndef PAGE_GENERATOR_INCLUDED
 #define PAGE_GENERATOR_INCLUDED
 
-
-
 #include "minorGems/io/OutputStream.h"
-
-
 
 /**
  * An interface for an HTML page generator.
  *
  * @author Jason Rohrer
  */
-class PageGenerator {
+class PageGenerator
+{
 
-    public:
-        
+  public:
+    /**
+     * Virtual destructor to ensure proper destruction of derived classes.
+     */
+    virtual ~PageGenerator();
 
-        
-        /**
-         * Virtual destructor to ensure proper destruction of derived classes.
-         */
-        virtual ~PageGenerator();
+    /**
+     * Generates a page according to a get request path.
+     *
+     * @param inGetRequestPath the path specified
+     *   by the get request.
+     *   Must be destroyed by caller if non-const.
+     * @param inOutputStream the stream to write the generated page to.
+     *   Must be destroyed by caller.
+     */
+    virtual void generatePage(char *inGetRequestPath, OutputStream *inOutputStream) = 0;
 
+    /**
+     * Gets the mime type associated with a particular request path.
+     *
+     *
+     * @param inGetRequestPath the path specified
+     *   by the get request.
+     *   Must be destroyed by caller if non-const.
+     *
+     * @return the mime type as a \0-terminated string.
+     *   Must be destroyed by caller.
+     */
+    virtual char *getMimeType(char *inGetRequestPath) = 0;
 
-
-        /**
-         * Generates a page according to a get request path.
-         *
-         * @param inGetRequestPath the path specified
-         *   by the get request.
-         *   Must be destroyed by caller if non-const.
-         * @param inOutputStream the stream to write the generated page to.
-         *   Must be destroyed by caller.
-         */
-        virtual void generatePage( char *inGetRequestPath,
-                                   OutputStream *inOutputStream ) = 0;
-        
-
-
-        /**
-         * Gets the mime type associated with a particular request path.
-         *
-         *
-         * @param inGetRequestPath the path specified
-         *   by the get request.
-         *   Must be destroyed by caller if non-const.
-         *
-         * @return the mime type as a \0-terminated string.
-         *   Must be destroyed by caller.
-         */
-        virtual char *getMimeType( char *inGetRequestPath ) = 0;
-        
-
-        /**
-         * Gets max age in seconds that a given path should be cached
-         * by the browser
-         * Defaults to 0 (no caching).
-         */
-        virtual int getCacheMaxAge( char *inGetRequestPath ) {
-            return 0;
-            }
-        
-        
-    };
-
-
-
-inline PageGenerator::~PageGenerator() {
-    // does nothing
+    /**
+     * Gets max age in seconds that a given path should be cached
+     * by the browser
+     * Defaults to 0 (no caching).
+     */
+    virtual int getCacheMaxAge(char *inGetRequestPath)
+    {
+        return 0;
     }
+};
 
-
+inline PageGenerator::~PageGenerator()
+{
+    // does nothing
+}
 
 #endif

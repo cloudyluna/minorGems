@@ -20,35 +20,22 @@
  * Added a queue size parameter.
  */
 
-
-
 #include "minorGems/network/p2pParts/OutboundChannel.h"
 
-
-
-OutboundChannel::OutboundChannel( OutputStream *inOutputStream,
-                                  HostAddress *inHost,
-                                  MessagePerSecondLimiter *inLimiter,
-                                  unsigned long inQueueSize )
-    : mLock( new MutexLock() ), mMessageReadySemaphore( new Semaphore() ),
-      mStream( inOutputStream ),
-      mHost( inHost ),
-      mLimiter( inLimiter ),
-      mConnectionBroken( false ), mThreadStopped( false ),
-      mMessageQueue( new SimpleVector<char*>() ),
-      mHighPriorityMessageQueue( new SimpleVector<char*>() ),
-      mMaxQueueSize( inQueueSize ),
-      mDroppedMessageCount( 0 ),
-      mSentMessageCount( 0 ) {
-    
+OutboundChannel::OutboundChannel(OutputStream *inOutputStream, HostAddress *inHost, MessagePerSecondLimiter *inLimiter,
+                                 unsigned long inQueueSize)
+    : mLock(new MutexLock()), mMessageReadySemaphore(new Semaphore()), mStream(inOutputStream), mHost(inHost),
+      mLimiter(inLimiter), mConnectionBroken(false), mThreadStopped(false), mMessageQueue(new SimpleVector<char *>()),
+      mHighPriorityMessageQueue(new SimpleVector<char *>()), mMaxQueueSize(inQueueSize), mDroppedMessageCount(0),
+      mSentMessageCount(0)
+{
 
     // start our thread
     start();
-    }
+}
 
-
-
-OutboundChannel::~OutboundChannel() {
+OutboundChannel::~OutboundChannel()
+{
     mLock->lock();
 
     mThreadStopped = true;
@@ -57,211 +44,210 @@ OutboundChannel::~OutboundChannel() {
 
     // wake the thread up if it is waiting
     mMessageReadySemaphore->signal();
-    
+
     // wait for our thread to get the stop signal and finish
     join();
-
 
     mLock->lock();
 
     delete mMessageReadySemaphore;
-    
+
     // clear the queues
     int numMessages = mMessageQueue->size();
     int i;
-    for( i=0; i<numMessages; i++ ) {
-        char *message = *( mMessageQueue->getElement( i ) );
-        delete [] message;
-        }
+    for (i = 0; i < numMessages; i++)
+    {
+        char *message = *(mMessageQueue->getElement(i));
+        delete[] message;
+    }
     delete mMessageQueue;
 
     numMessages = mHighPriorityMessageQueue->size();
-    for( i=0; i<numMessages; i++ ) {
-        char *message = *( mHighPriorityMessageQueue->getElement( i ) );
-        delete [] message;
-        }
+    for (i = 0; i < numMessages; i++)
+    {
+        char *message = *(mHighPriorityMessageQueue->getElement(i));
+        delete[] message;
+    }
     delete mHighPriorityMessageQueue;
-
-    
 
     delete mHost;
 
     mLock->unlock();
 
     delete mLock;
-    }
-    
+}
 
-
-char OutboundChannel::sendMessage( char * inMessage, int inPriority ) {
+char OutboundChannel::sendMessage(char *inMessage, int inPriority)
+{
     mLock->lock();
 
-
     char sent;
-    
-    if( !mConnectionBroken ) {
+
+    if (!mConnectionBroken)
+    {
         // add it to the queue
         SimpleVector<char *> *queueToUse;
 
-        if( inPriority <=0 ) {
+        if (inPriority <= 0)
+        {
             queueToUse = mMessageQueue;
-            }
-        else {
+        }
+        else
+        {
             queueToUse = mHighPriorityMessageQueue;
-            }
+        }
 
-        
-        queueToUse->push_back( stringDuplicate( inMessage ) );
+        queueToUse->push_back(stringDuplicate(inMessage));
         sent = true;
 
-        if( queueToUse->size() > mMaxQueueSize ) {
+        if (queueToUse->size() > mMaxQueueSize)
+        {
             // the queue is over-full
             // drop the oldest message
 
-            char *message = *( queueToUse->getElement( 0 ) );
-            queueToUse->deleteElement( 0 );
-            delete [] message;
+            char *message = *(queueToUse->getElement(0));
+            queueToUse->deleteElement(0);
+            delete[] message;
 
             mDroppedMessageCount++;
-            }
         }
-    else {
+    }
+    else
+    {
         // channel no longer working
         sent = false;
-        }
-        
+    }
+
     mLock->unlock();
 
-    if( sent ) {
+    if (sent)
+    {
         mMessageReadySemaphore->signal();
-        }
-    
+    }
+
     return sent;
-    }
+}
 
-
-
-HostAddress * OutboundChannel::getHost() {
+HostAddress *OutboundChannel::getHost()
+{
     return mHost->copy();
-    }
+}
 
-
-
-void OutboundChannel::setHost( HostAddress *inHost ) {
+void OutboundChannel::setHost(HostAddress *inHost)
+{
     delete mHost;
     mHost = inHost->copy();
-    }
+}
 
-
-
-int OutboundChannel::getSentMessageCount() {
+int OutboundChannel::getSentMessageCount()
+{
     mLock->lock();
     int count = mSentMessageCount;
     mLock->unlock();
 
     return count;
-    }
+}
 
-
-
-int OutboundChannel::getQueuedMessageCount() {
+int OutboundChannel::getQueuedMessageCount()
+{
     mLock->lock();
     int count = mMessageQueue->size() + mHighPriorityMessageQueue->size();
     mLock->unlock();
 
     return count;
-    }
+}
 
-
-
-int OutboundChannel::getDroppedMessageCount() {
+int OutboundChannel::getDroppedMessageCount()
+{
     mLock->lock();
     int count = mDroppedMessageCount;
     mLock->unlock();
 
     return count;
-    }
+}
 
-
-
-void OutboundChannel::run() {
+void OutboundChannel::run()
+{
     mLock->lock();
     char stopped = mThreadStopped;
     mLock->unlock();
 
-    while( !stopped ) {
-
+    while (!stopped)
+    {
 
         // get a message from the queue, checking high priority queue first
         char *message = NULL;
 
         mLock->lock();
 
-        if( mHighPriorityMessageQueue->size() >= 1 ) {
-            message = *( mHighPriorityMessageQueue->getElement( 0 ) );
-            mHighPriorityMessageQueue->deleteElement( 0 );             
-            }        
-        else if( mMessageQueue->size() >= 1 ) {
-            message = *( mMessageQueue->getElement( 0 ) );
-            mMessageQueue->deleteElement( 0 );            
-            }
+        if (mHighPriorityMessageQueue->size() >= 1)
+        {
+            message = *(mHighPriorityMessageQueue->getElement(0));
+            mHighPriorityMessageQueue->deleteElement(0);
+        }
+        else if (mMessageQueue->size() >= 1)
+        {
+            message = *(mMessageQueue->getElement(0));
+            mMessageQueue->deleteElement(0);
+        }
 
         mLock->unlock();
 
         // note that we're unlocked during the send, so messages
         // can be freely added to the queue without blocking while we send
         // this message
-        
-        if( message != NULL ) {
+
+        if (message != NULL)
+        {
 
             // obey the limit
             // we will block here if message rate is too high
             mLimiter->messageTransmitted();
-                        
-            int bytesSent = mStream->writeString( message );
 
-            int messageLength = strlen( message );
-    
-            delete [] message;
+            int bytesSent = mStream->writeString(message);
 
+            int messageLength = strlen(message);
+
+            delete[] message;
 
             char sent;
-            
-            if( bytesSent == messageLength ) {
+
+            if (bytesSent == messageLength)
+            {
                 sent = true;
 
                 mLock->lock();
                 mSentMessageCount++;
                 mLock->unlock();
-                }
-            else {
+            }
+            else
+            {
                 sent = false;
-                }
+            }
 
-
-            if( !sent ) {
+            if (!sent)
+            {
                 // connection is broken
                 // stop this thread
-                
+
                 mLock->lock();
 
                 mConnectionBroken = true;
                 mThreadStopped = true;
 
                 mLock->unlock();
-                }
             }
-        else {
+        }
+        else
+        {
             // no messages in the queue.
             // wait for more messages to be ready
             mMessageReadySemaphore->wait();
-            }
-        
+        }
 
         // check if we've been stopped
         mLock->lock();
         stopped = mThreadStopped;
         mLock->unlock();
-        }
-    
     }
+}

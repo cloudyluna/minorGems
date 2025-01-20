@@ -12,13 +12,12 @@
  */
 
 #ifndef OBJECT_3D_FACTORY_INCLUDED
-#define OBJECT_3D_FACTORY_INCLUDED 
+#define OBJECT_3D_FACTORY_INCLUDED
 
 #include "Object3D.h"
 
 // Run-time type identification interface (RTTI)
 #include <typeinfo>
-
 
 // include these objects only if we are part of subreal
 #ifdef SUBREAL
@@ -29,7 +28,6 @@
 
 // the default flag
 #define FACTORY_DEFAULT_OBJECT_FLAG 0
-
 
 /**
  * Class that maps Object3D integer subclass type flags to Object3D
@@ -53,77 +51,73 @@
  *
  * @author Jason Rohrer
  */
-class Object3DFactory {
-	public:
+class Object3DFactory
+{
+  public:
+    /**
+     * Finds an integer subclass type flag for an object instance.
+     *
+     * @param inObject the object to determine a flag for.  Must
+     *   be destroyed by the caller.
+     *
+     * @return a type flag for inObject.  0 (the defautl Object3D
+     *   baseclass flag) will be returned if subclass determination fails.
+     */
+    static int object3DToInt(Object3D *inObject);
 
-		/**
-		 * Finds an integer subclass type flag for an object instance.
-		 *
-		 * @param inObject the object to determine a flag for.  Must
-		 *   be destroyed by the caller.
-		 *
-		 * @return a type flag for inObject.  0 (the defautl Object3D
-		 *   baseclass flag) will be returned if subclass determination fails.
-		 */
-		static int object3DToInt( Object3D *inObject );
+    /**
+     * Constructs a new, unitialized Object3D (in other words,
+     * an Object3D ready for deserialization) of a subclass
+     * type matching inTypeFlag.
+     *
+     * @param inTypeFlag the type flag specifying the class
+     *   of the returned object.
+     *
+     * @return an (unitialized) Object3D class instance with a
+     *   subclass type corresponding to inTypeFlag.  If no
+     *   matching class is found, a default Object3D baseclass
+     *   instance is returned.  Must be destroyed by the caller.
+     */
+    static Object3D *intToObject3D(int inTypeFlag);
+};
 
-		
-		/**
-		 * Constructs a new, unitialized Object3D (in other words,
-		 * an Object3D ready for deserialization) of a subclass
-		 * type matching inTypeFlag.
-		 *
-		 * @param inTypeFlag the type flag specifying the class
-		 *   of the returned object.
-		 *
-		 * @return an (unitialized) Object3D class instance with a
-		 *   subclass type corresponding to inTypeFlag.  If no
-		 *   matching class is found, a default Object3D baseclass
-		 *   instance is returned.  Must be destroyed by the caller. 
-		 */
-		static Object3D *intToObject3D( int inTypeFlag );
-		
-	};
+inline int Object3DFactory::object3DToInt(Object3D *inObject)
+{
 
+    // use RTTI to determine type of inObject
 
-
-inline int Object3DFactory::object3DToInt( Object3D *inObject ) {
-
-	// use RTTI to determine type of inObject
-	
 #ifdef SUBREAL
-	if( typeid( *inObject ) == typeid( EntityObject3D ) ) {
-		return FACTORY_ENTITY_OBJECT_FLAG;
-		}
+    if (typeid(*inObject) == typeid(EntityObject3D))
+    {
+        return FACTORY_ENTITY_OBJECT_FLAG;
+    }
 #endif
-	// else return the default flag
-	return FACTORY_DEFAULT_OBJECT_FLAG;
-	}
+    // else return the default flag
+    return FACTORY_DEFAULT_OBJECT_FLAG;
+}
 
+inline Object3D *Object3DFactory::intToObject3D(int inTypeFlag)
+{
+    switch (inTypeFlag)
+    {
+    case FACTORY_DEFAULT_OBJECT_FLAG:
+        return new Object3D();
+        break;
 
-
-inline Object3D *Object3DFactory::intToObject3D( int inTypeFlag ) {
-	switch( inTypeFlag ) {
-		case FACTORY_DEFAULT_OBJECT_FLAG:
-			return new Object3D();
-			break;
-
-			/* these objects are only defined if
-			 * we are part of subreal
-			 */
+        /* these objects are only defined if
+         * we are part of subreal
+         */
 #ifdef SUBREAL
-		case FACTORY_ENTITY_OBJECT_FLAG:
-			return new EntityObject3D();
-			break;
+    case FACTORY_ENTITY_OBJECT_FLAG:
+        return new EntityObject3D();
+        break;
 #endif
 
-		default:
-			// unknown object flag type
-			return new Object3D();
-			break;
-		}
-			
-	}
-
+    default:
+        // unknown object flag type
+        return new Object3D();
+        break;
+    }
+}
 
 #endif

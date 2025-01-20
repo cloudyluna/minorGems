@@ -11,23 +11,23 @@
 #include "NeuralNet.h"
 
 /**
- * Abstract superclass for a double-precision floating point neural network. 
+ * Abstract superclass for a double-precision floating point neural network.
  *
- * @author Jason Rohrer 
+ * @author Jason Rohrer
  */
-class DoubleNeuralNet : public NeuralNet {
+class DoubleNeuralNet : public NeuralNet
+{
 
-	public:
-		
-		/**
-		 * Runs the neural network on input values to produce
-		 * output values.
-		 *
-		 * @param inInputs pointer to array of input values.
-		 * @param outOutputs pointer to array where output values 
-		 *   will be stored.
-		 */
-		virtual void run( double *inInputs, double *outOutputs ) = 0;
-	}; 
+  public:
+    /**
+     * Runs the neural network on input values to produce
+     * output values.
+     *
+     * @param inInputs pointer to array of input values.
+     * @param outOutputs pointer to array where output values
+     *   will be stored.
+     */
+    virtual void run(double *inInputs, double *outOutputs) = 0;
+};
 
 #endif

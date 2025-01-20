@@ -9,17 +9,11 @@
  * Added makeDirectory function.
  */
 
-
-
 #include "minorGems/common.h"
 #include "minorGems/io/file/File.h"
 
-
-
 #ifndef DIRECTORY_INCLUDED
 #define DIRECTORY_INCLUDED
-
-
 
 /**
  * Class of static directory functions.
@@ -30,44 +24,33 @@
  *
  * @author Jason Rohrer.
  */
-class Directory {
+class Directory
+{
 
-    public:
+  public:
+    /**
+     * Removes a directory.
+     *
+     * The directory must be empty for this call to succeed.
+     *
+     * @param inFile the file representing the directory.
+     *   Must be destroyed by caller.
+     *
+     * @return true if the directory is removed successfully, or
+     *   false otherwise (for example, if the directory is not empy).
+     */
+    static char removeDirectory(File *inFile);
 
-
-
-        /**
-         * Removes a directory.
-         *
-         * The directory must be empty for this call to succeed.
-         *
-         * @param inFile the file representing the directory.
-         *   Must be destroyed by caller.
-         *
-         * @return true if the directory is removed successfully, or
-         *   false otherwise (for example, if the directory is not empy).
-         */
-        static char removeDirectory( File *inFile );
-
-
-
-        /**
-         * Makes a directory.
-         *
-         * @param inFile the file representing the directory.
-         *   Must be destroyed by caller.
-         *
-         * @return true if the directory is removed successfully, or
-         *   false otherwise (for example, if the directory is not empy).
-         */
-        static char makeDirectory( File *inFile );
-
-        
-        
-    };
-
-
+    /**
+     * Makes a directory.
+     *
+     * @param inFile the file representing the directory.
+     *   Must be destroyed by caller.
+     *
+     * @return true if the directory is removed successfully, or
+     *   false otherwise (for example, if the directory is not empy).
+     */
+    static char makeDirectory(File *inFile);
+};
 
 #endif
-
-

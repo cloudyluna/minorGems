@@ -8,22 +8,13 @@
  * Fixed a syntax typo.
  */
 
-
-
 #include "minorGems/system/Launcher.h"
 
-#include <windows.h>
 #include <process.h>
+#include <windows.h>
 
+void Launcher::launchCommand(char *inCommandName, char **inArguments)
+{
 
-
-void Launcher::launchCommand( char *inCommandName,
-                              char **inArguments ) {
-
-    _spawnvp( _P_NOWAIT,
-              inCommandName,
-              inArguments );
-    }
-
-
-
+    _spawnvp(_P_NOWAIT, inCommandName, inArguments);
+}

@@ -23,23 +23,22 @@
  * 2001-May-17   Jason Rohrer
  * Added some timing output messages.
  */
- 
- 
+
 #ifndef WAYPOINT_MOVE_GENERATOR_INCLUDED
-#define WAYPOINT_MOVE_GENERATOR_INCLUDED 
+#define WAYPOINT_MOVE_GENERATOR_INCLUDED
 
-#include "StereoMoveGenerator.h"
-#include "MoveProcessor.h"
 #include "ImageUtilities.h"
+#include "MoveProcessor.h"
+#include "StereoMoveGenerator.h"
 
-#include "minorGems/graphics/Image.h"
 #include "minorGems/graphics/Color.h"
-#include "minorGems/graphics/filters/MedianFilter.h"
+#include "minorGems/graphics/Image.h"
 #include "minorGems/graphics/filters/BoxBlurFilter.h"
+#include "minorGems/graphics/filters/MedianFilter.h"
 
-#include "minorGems/graphics/ImageColorConverter.h"
-#include "ImageStatistics.h"
 #include "ImageRectangle.h"
+#include "ImageStatistics.h"
+#include "minorGems/graphics/ImageColorConverter.h"
 
 #include "minorGems/system/Thread.h"
 
@@ -52,425 +51,398 @@
  * Only processes the left image.
  *
  * @author Jason Rohrer
- */ 
-class WaypointMoveGenerator : public StereoMoveGenerator {
-	
-	public:
-		
-		/**
-		 * Constructs a move generator.
-		 *
-		 * @param inConfigFile the file to read configuration
-		 *   information from.  Must be closed by caller.
-		 *   Can be closed immediately after the constructor
-		 *   returns.
-		 * @param inOutputFiles true if image files should be output
-		 *   to disk.
-		 */
-		WaypointMoveGenerator( FILE*inConfigFile, char inOutputImageFiles );
-		
-		~WaypointMoveGenerator();
-		
-		// implements StereoMoveGenerator
-		virtual void generateMoves( 
-			Image *inLeftImage, Image *inRightImage, 
-			Image *inStereoData, MoveProcessor *inMoveProcessor );	
-	
-	private:
-		char mInitialized;
+ */
+class WaypointMoveGenerator : public StereoMoveGenerator
+{
 
-		char mOutputFiles;
-		
-		// our view angle as a fraction of a full rotation
-		// a value of 0.5 represents a 180 degree view angle
-		double mViewAngle;
-		
-		double mTolerance;
-		double mSaturationThreshold;
-		
-		double mSeeWaypointFraction;
-		double mAtWaypointFraction;
-		int mLoop;
+  public:
+    /**
+     * Constructs a move generator.
+     *
+     * @param inConfigFile the file to read configuration
+     *   information from.  Must be closed by caller.
+     *   Can be closed immediately after the constructor
+     *   returns.
+     * @param inOutputFiles true if image files should be output
+     *   to disk.
+     */
+    WaypointMoveGenerator(FILE *inConfigFile, char inOutputImageFiles);
 
-		int mLearnWaypointColors;
-		int mLearningStartDelay;
-		int mBetweenColorLearningDelay;
-		
-		char mNumWaypoints;
-		// a hue value for each waypoint
-		double *mWaypoints;
+    ~WaypointMoveGenerator();
 
-		int mCurrentWaypoint;
+    // implements StereoMoveGenerator
+    virtual void generateMoves(Image *inLeftImage, Image *inRightImage, Image *inStereoData,
+                               MoveProcessor *inMoveProcessor);
 
+  private:
+    char mInitialized;
 
-		int mLearningWaypointColors;
-		int mCurrentLearningWaypoint;
-		
-		/**
-		 * Reads our configuration values from file.
-		 *
-		 * @param inConfigFile the file to read values from.
-		 *   Must be destroyed by caller.
-		 *
-		 * @return true iff all values were read succesfully.
-		 */
-		char readConfigFile( FILE *inConfigFile );
-		
-	};
-	
-	
-	
-inline WaypointMoveGenerator::WaypointMoveGenerator(
-	FILE *inConfigFile,
-	char inOutputImageFiles )
-	: mInitialized( false ), mOutputFiles( inOutputImageFiles ) {
-	
-	if( !readConfigFile( inConfigFile ) ) {
-		printf( "WaypointMoveGenerator failed to read config file.\n" );
-		}
-	else {
-		mInitialized = true;
+    char mOutputFiles;
 
-		if( mLearnWaypointColors ) {
-			mLearningWaypointColors = true;
-			mCurrentLearningWaypoint = 0;
-			}
-		}
-	}
+    // our view angle as a fraction of a full rotation
+    // a value of 0.5 represents a 180 degree view angle
+    double mViewAngle;
 
+    double mTolerance;
+    double mSaturationThreshold;
 
+    double mSeeWaypointFraction;
+    double mAtWaypointFraction;
+    int mLoop;
 
-inline WaypointMoveGenerator::~WaypointMoveGenerator() {
+    int mLearnWaypointColors;
+    int mLearningStartDelay;
+    int mBetweenColorLearningDelay;
 
-	if( mInitialized ) {
-		delete [] mWaypoints;
-		}
-	
-	}	
-	
-		
-		
-inline void WaypointMoveGenerator::generateMoves( 
-	Image *inLeftImage, Image *inRightImage, 
-	Image *inStereoData, MoveProcessor *inMoveProcessor ) {
+    char mNumWaypoints;
+    // a hue value for each waypoint
+    double *mWaypoints;
 
-	struct timeb timeStruct;
+    int mCurrentWaypoint;
 
-    ftime( &timeStruct );
-    printf("about to do median, time = %ld.%d\n",
-		   timeStruct.time, timeStruct.millitm );
-  
-	MedianFilter *filter = new MedianFilter( 2 );
-	//BoxBlurFilter *filter = new BoxBlurFilter( 2 );
-	inLeftImage->filter( filter );
+    int mLearningWaypointColors;
+    int mCurrentLearningWaypoint;
 
-	ftime( &timeStruct );
-    printf("about to do RGB->HSB, time = %ld.%d\n",
-		   timeStruct.time, timeStruct.millitm );
-	
-	delete filter;
-	
-	Image *hsbImage = ImageStatistics::RGBtoHSB( inLeftImage );
-	
-	// handle the case where we're learning
-	if( mLearningWaypointColors ) {
-		// the image coming in is for the last waypoint
-		int lastWaypoint = mCurrentLearningWaypoint - 1;
+    /**
+     * Reads our configuration values from file.
+     *
+     * @param inConfigFile the file to read values from.
+     *   Must be destroyed by caller.
+     *
+     * @return true iff all values were read succesfully.
+     */
+    char readConfigFile(FILE *inConfigFile);
+};
 
-		if( lastWaypoint < 0 ) {
-			// first step in the learning phase
-			Thread::sleep( mLearningStartDelay * 1000 );
+inline WaypointMoveGenerator::WaypointMoveGenerator(FILE *inConfigFile, char inOutputImageFiles)
+    : mInitialized(false), mOutputFiles(inOutputImageFiles)
+{
 
-			}
-		else if( lastWaypoint >= 0 ) {
-			Image *ignoreMask = new Image( hsbImage->getWidth(),
-										   hsbImage->getHeight(),
-										   1 );
-			ImageStatistics::thresholdMap( hsbImage,
-										   mSaturationThreshold,
-										   1,
-										   ignoreMask );
-			
-			// look at the inLeftImage to learn this waypoint
-			ImageRectangle *centerRect =
-				new ImageRectangle( 0.45, 0.55, 0.45, 0.55 );
+    if (!readConfigFile(inConfigFile))
+    {
+        printf("WaypointMoveGenerator failed to read config file.\n");
+    }
+    else
+    {
+        mInitialized = true;
 
-			// find the average hue of the image center
-			double aveHue =
-				ImageStatistics::averageValue( hsbImage, 0,
-											   centerRect,
-											   ignoreMask );
-			delete centerRect;
+        if (mLearnWaypointColors)
+        {
+            mLearningWaypointColors = true;
+            mCurrentLearningWaypoint = 0;
+        }
+    }
+}
 
-			mWaypoints[lastWaypoint] = aveHue;
+inline WaypointMoveGenerator::~WaypointMoveGenerator()
+{
 
-			// print the learned color
-			printf( "Waypoint %d learned as hue:   %f\n",
-					lastWaypoint, aveHue );
+    if (mInitialized)
+    {
+        delete[] mWaypoints;
+    }
+}
 
-			if( mOutputFiles ) {
-				char *filePrefix = new char[100];
+inline void WaypointMoveGenerator::generateMoves(Image *inLeftImage, Image *inRightImage, Image *inStereoData,
+                                                 MoveProcessor *inMoveProcessor)
+{
 
-				// output RGB image
-				sprintf( filePrefix,
-						 "waypoint%dExampleRGB__", lastWaypoint );
-				ImageUtilities::imageToBMPFile( inLeftImage, filePrefix );
+    struct timeb timeStruct;
 
-				// output HSB image
-				sprintf( filePrefix, "waypoint%dExampleHSB__", lastWaypoint );
-				ImageUtilities::imageToBMPFile( hsbImage, filePrefix );
+    ftime(&timeStruct);
+    printf("about to do median, time = %ld.%d\n", timeStruct.time, timeStruct.millitm);
 
-				delete [] filePrefix;
-				}
+    MedianFilter *filter = new MedianFilter(2);
+    // BoxBlurFilter *filter = new BoxBlurFilter( 2 );
+    inLeftImage->filter(filter);
 
-			delete ignoreMask;
-			}
+    ftime(&timeStruct);
+    printf("about to do RGB->HSB, time = %ld.%d\n", timeStruct.time, timeStruct.millitm);
 
-		mCurrentLearningWaypoint++;
-		
-		if( mCurrentLearningWaypoint > mNumWaypoints ) {
-			// we're done learning
-			mLearningWaypointColors = false;
-			}
-		else {
-			// still learning
+    delete filter;
 
-			if( mCurrentLearningWaypoint != 1 ) {
-				// flash once to tell trainer we're done with
-				// the sampling of the last waypoint
-				inMoveProcessor->flashLight( 1 );
-				}
-			
-			// delay before sending flashes
-			Thread::sleep( mBetweenColorLearningDelay * 1000 );
-			
-			// send flashes for the next waypoint
-			// send 1 + the waypoint number so that we can specify
-			// waypoint 0
-			inMoveProcessor->flashLight( mCurrentLearningWaypoint );
-			}
+    Image *hsbImage = ImageStatistics::RGBtoHSB(inLeftImage);
 
-		// don't go on with other move code if we're learning
-		delete hsbImage;
-		return;
-		}
+    // handle the case where we're learning
+    if (mLearningWaypointColors)
+    {
+        // the image coming in is for the last waypoint
+        int lastWaypoint = mCurrentLearningWaypoint - 1;
 
-	
-	// if we reached this point without returning,
-	// we are out of the learning phase
-	
-	
-	// make sure we're init'ed before accessing members
-	if( !mInitialized ) {
-		printf( "WaypointMoveGenerator not initialized\n" );
-		}
-	else {
+        if (lastWaypoint < 0)
+        {
+            // first step in the learning phase
+            Thread::sleep(mLearningStartDelay * 1000);
+        }
+        else if (lastWaypoint >= 0)
+        {
+            Image *ignoreMask = new Image(hsbImage->getWidth(), hsbImage->getHeight(), 1);
+            ImageStatistics::thresholdMap(hsbImage, mSaturationThreshold, 1, ignoreMask);
 
-		ftime( &timeStruct );
-		printf("about to do ignore mask, time = %ld.%d\n",
-			   timeStruct.time, timeStruct.millitm );
-		
-		Image *ignoreMask = new Image( hsbImage->getWidth(),
-									   hsbImage->getHeight(),
-									   1 );
-		ImageStatistics::thresholdMap( hsbImage,
-									   mSaturationThreshold,
-									   1,
-									   ignoreMask );
+            // look at the inLeftImage to learn this waypoint
+            ImageRectangle *centerRect = new ImageRectangle(0.45, 0.55, 0.45, 0.55);
 
-		ftime( &timeStruct );
-		printf("about to do fraction near value, time = %ld.%d\n",
-			   timeStruct.time, timeStruct.millitm );
-		
-		double fraction =
-			ImageStatistics::fractionNearValue(
-				hsbImage,
-				0,
-				mWaypoints[ mCurrentWaypoint ],
-				mTolerance, ignoreMask );
+            // find the average hue of the image center
+            double aveHue = ImageStatistics::averageValue(hsbImage, 0, centerRect, ignoreMask);
+            delete centerRect;
 
-		printf( "fraction = %f\n", fraction );
+            mWaypoints[lastWaypoint] = aveHue;
 
-		if( mOutputFiles ) {
-			char *filePrefix = new char[100];
+            // print the learned color
+            printf("Waypoint %d learned as hue:   %f\n", lastWaypoint, aveHue);
 
-			// output RGB image
-			sprintf( filePrefix,
-					 "waypoint%dSearchRGB__", mCurrentWaypoint );
-			ImageUtilities::imageToBMPFile( inLeftImage, filePrefix );
+            if (mOutputFiles)
+            {
+                char *filePrefix = new char[100];
 
-			// output HSB image
-			sprintf( filePrefix,
-					 "waypoint%dSearchHSB__", mCurrentWaypoint );
-			ImageUtilities::imageToBMPFile( hsbImage, filePrefix );
-			
-			delete [] filePrefix;
-			}
+                // output RGB image
+                sprintf(filePrefix, "waypoint%dExampleRGB__", lastWaypoint);
+                ImageUtilities::imageToBMPFile(inLeftImage, filePrefix);
 
-		ftime( &timeStruct );
-		printf("about to do send a move, time = %ld.%d\n",
-			   timeStruct.time, timeStruct.millitm );
-		
-		if( fraction > mAtWaypointFraction ) {
-			// we've made it to a waypoint
-			// flash a light to say that we're here
-			inMoveProcessor->flashLight( mCurrentWaypoint + 1 );
-				
-			printf( "Reached waypoint %d\n", mCurrentWaypoint );
-			
-			// move onto the next waypoint
-			if( mCurrentWaypoint < mNumWaypoints - 1 ) {
-				
-				mCurrentWaypoint++;
-				}
-			else {
-				// out of waypoints
-				if( mLoop ) {
-					printf( "Looping back to waypoint 0\n" );
-					// start over
-					mCurrentWaypoint = 0;
-					}
-				else {
-					// were done, so do nothing
-					printf( "Reached final waypoint, so stopping.\n" );
-					}
-				}					
-			}
-		else if( fraction > mSeeWaypointFraction ) {
-			// we can see the waypoint, but we're not there yet
+                // output HSB image
+                sprintf(filePrefix, "waypoint%dExampleHSB__", lastWaypoint);
+                ImageUtilities::imageToBMPFile(hsbImage, filePrefix);
 
-			double centerX;
-			double centerY;
+                delete[] filePrefix;
+            }
 
-			// find the center of the visible waypoint color
-			ImageStatistics::centerOfValue(
-				hsbImage,
-				0,
-				mWaypoints[ mCurrentWaypoint ],
-				mTolerance,
-				&centerX, &centerY, ignoreMask );
+            delete ignoreMask;
+        }
 
-			double viewLocationOfCenter = ( centerX - 0.5 );
+        mCurrentLearningWaypoint++;
 
-			double angleToRotate =
-				mViewAngle * viewLocationOfCenter;
+        if (mCurrentLearningWaypoint > mNumWaypoints)
+        {
+            // we're done learning
+            mLearningWaypointColors = false;
+        }
+        else
+        {
+            // still learning
 
-			// if we'd be rotating more than 1/100th of a rotation
-			if( angleToRotate > 0.01 || angleToRotate < -0.01 ) {
-				printf( "Rotating by %f to center waypoint\n",
-						angleToRotate );
-				inMoveProcessor->rotateClockwise( angleToRotate );
-				}
-			else {
-				// our view is basically centered on our waypoint,
-				// so roll towards it
-				printf(
-					"Moving forward 1/10 meter towards waypoint\n" );
-				inMoveProcessor->translateForward( 1.0 );
-				}
-			}
-		else {
-			// we can't even see the waypoint.
+            if (mCurrentLearningWaypoint != 1)
+            {
+                // flash once to tell trainer we're done with
+                // the sampling of the last waypoint
+                inMoveProcessor->flashLight(1);
+            }
 
-			printf( "Rotating %f to look for waypoint\n",mViewAngle / 2.0 );
-		
-			// rotate by 90 to look for it
-			inMoveProcessor->rotateClockwise( mViewAngle / 2.0 );
-			}
+            // delay before sending flashes
+            Thread::sleep(mBetweenColorLearningDelay * 1000);
 
-		ftime( &timeStruct );
-		printf("done sending a move, time = %ld.%d\n",
-			   timeStruct.time, timeStruct.millitm );
-		
-		delete ignoreMask;
-		}
-	
-	delete hsbImage;
-	}	
+            // send flashes for the next waypoint
+            // send 1 + the waypoint number so that we can specify
+            // waypoint 0
+            inMoveProcessor->flashLight(mCurrentLearningWaypoint);
+        }
 
+        // don't go on with other move code if we're learning
+        delete hsbImage;
+        return;
+    }
 
+    // if we reached this point without returning,
+    // we are out of the learning phase
 
-inline char WaypointMoveGenerator::readConfigFile(
-	FILE *inConfigFile ) {
+    // make sure we're init'ed before accessing members
+    if (!mInitialized)
+    {
+        printf("WaypointMoveGenerator not initialized\n");
+    }
+    else
+    {
 
-	int numRead = fscanf( inConfigFile, "%lf", &mViewAngle );
-	if( numRead != 1 ) {
-		return 0;
-		}
-	mViewAngle = mViewAngle / 360.0;
+        ftime(&timeStruct);
+        printf("about to do ignore mask, time = %ld.%d\n", timeStruct.time, timeStruct.millitm);
 
-	
-	numRead = fscanf( inConfigFile, "%lf", &mTolerance );
-	if( numRead != 1 ) {
-		return 0;
-		}
+        Image *ignoreMask = new Image(hsbImage->getWidth(), hsbImage->getHeight(), 1);
+        ImageStatistics::thresholdMap(hsbImage, mSaturationThreshold, 1, ignoreMask);
 
-	
-	numRead = fscanf( inConfigFile, "%lf", &mSaturationThreshold );
-	if( numRead != 1 ) {
-		return 0;
-		}
+        ftime(&timeStruct);
+        printf("about to do fraction near value, time = %ld.%d\n", timeStruct.time, timeStruct.millitm);
 
-	
-	numRead = fscanf( inConfigFile, "%lf", &mSeeWaypointFraction );
-	if( numRead != 1 ) {
-		return 0;
-		}
+        double fraction =
+            ImageStatistics::fractionNearValue(hsbImage, 0, mWaypoints[mCurrentWaypoint], mTolerance, ignoreMask);
 
-	
-	numRead = fscanf( inConfigFile, "%lf", &mAtWaypointFraction );
-	if( numRead != 1 ) {
-		return 0;
-		}
-	
+        printf("fraction = %f\n", fraction);
 
-	numRead = fscanf( inConfigFile, "%d", &mLoop );
-	if( numRead != 1 ) {
-		return 0;
-		}
+        if (mOutputFiles)
+        {
+            char *filePrefix = new char[100];
 
+            // output RGB image
+            sprintf(filePrefix, "waypoint%dSearchRGB__", mCurrentWaypoint);
+            ImageUtilities::imageToBMPFile(inLeftImage, filePrefix);
 
-	numRead = fscanf( inConfigFile, "%d", &mLearnWaypointColors );
-	if( numRead != 1 ) {
-		return 0;
-		}
+            // output HSB image
+            sprintf(filePrefix, "waypoint%dSearchHSB__", mCurrentWaypoint);
+            ImageUtilities::imageToBMPFile(hsbImage, filePrefix);
 
-	
-	numRead = fscanf( inConfigFile, "%d", &mLearningStartDelay );
-	if( numRead != 1 ) {
-		return 0;
-		}
+            delete[] filePrefix;
+        }
 
-	
-	numRead = fscanf( inConfigFile, "%d", &mBetweenColorLearningDelay );
-	if( numRead != 1 ) {
-		return 0;
-		}
-	
-	
-	numRead = fscanf( inConfigFile, "%d", &mNumWaypoints );
-	if( numRead != 1 ) {
-		return 0;
-		}
+        ftime(&timeStruct);
+        printf("about to do send a move, time = %ld.%d\n", timeStruct.time, timeStruct.millitm);
 
-	
-	mWaypoints = new double[ mNumWaypoints ];
+        if (fraction > mAtWaypointFraction)
+        {
+            // we've made it to a waypoint
+            // flash a light to say that we're here
+            inMoveProcessor->flashLight(mCurrentWaypoint + 1);
 
-	for( int i=0; i<mNumWaypoints; i++ ) {
-		double hue;
+            printf("Reached waypoint %d\n", mCurrentWaypoint);
 
-		numRead = fscanf( inConfigFile, "%lf", &hue );
-		if( numRead != 1 ) {
-			return 0;
-			}
-		
-		mWaypoints[i] = hue;
-		}
-	
-	// success
-	return 1;
-	}
+            // move onto the next waypoint
+            if (mCurrentWaypoint < mNumWaypoints - 1)
+            {
 
- 
-		
+                mCurrentWaypoint++;
+            }
+            else
+            {
+                // out of waypoints
+                if (mLoop)
+                {
+                    printf("Looping back to waypoint 0\n");
+                    // start over
+                    mCurrentWaypoint = 0;
+                }
+                else
+                {
+                    // were done, so do nothing
+                    printf("Reached final waypoint, so stopping.\n");
+                }
+            }
+        }
+        else if (fraction > mSeeWaypointFraction)
+        {
+            // we can see the waypoint, but we're not there yet
+
+            double centerX;
+            double centerY;
+
+            // find the center of the visible waypoint color
+            ImageStatistics::centerOfValue(hsbImage, 0, mWaypoints[mCurrentWaypoint], mTolerance, &centerX, &centerY,
+                                           ignoreMask);
+
+            double viewLocationOfCenter = (centerX - 0.5);
+
+            double angleToRotate = mViewAngle * viewLocationOfCenter;
+
+            // if we'd be rotating more than 1/100th of a rotation
+            if (angleToRotate > 0.01 || angleToRotate < -0.01)
+            {
+                printf("Rotating by %f to center waypoint\n", angleToRotate);
+                inMoveProcessor->rotateClockwise(angleToRotate);
+            }
+            else
+            {
+                // our view is basically centered on our waypoint,
+                // so roll towards it
+                printf("Moving forward 1/10 meter towards waypoint\n");
+                inMoveProcessor->translateForward(1.0);
+            }
+        }
+        else
+        {
+            // we can't even see the waypoint.
+
+            printf("Rotating %f to look for waypoint\n", mViewAngle / 2.0);
+
+            // rotate by 90 to look for it
+            inMoveProcessor->rotateClockwise(mViewAngle / 2.0);
+        }
+
+        ftime(&timeStruct);
+        printf("done sending a move, time = %ld.%d\n", timeStruct.time, timeStruct.millitm);
+
+        delete ignoreMask;
+    }
+
+    delete hsbImage;
+}
+
+inline char WaypointMoveGenerator::readConfigFile(FILE *inConfigFile)
+{
+
+    int numRead = fscanf(inConfigFile, "%lf", &mViewAngle);
+    if (numRead != 1)
+    {
+        return 0;
+    }
+    mViewAngle = mViewAngle / 360.0;
+
+    numRead = fscanf(inConfigFile, "%lf", &mTolerance);
+    if (numRead != 1)
+    {
+        return 0;
+    }
+
+    numRead = fscanf(inConfigFile, "%lf", &mSaturationThreshold);
+    if (numRead != 1)
+    {
+        return 0;
+    }
+
+    numRead = fscanf(inConfigFile, "%lf", &mSeeWaypointFraction);
+    if (numRead != 1)
+    {
+        return 0;
+    }
+
+    numRead = fscanf(inConfigFile, "%lf", &mAtWaypointFraction);
+    if (numRead != 1)
+    {
+        return 0;
+    }
+
+    numRead = fscanf(inConfigFile, "%d", &mLoop);
+    if (numRead != 1)
+    {
+        return 0;
+    }
+
+    numRead = fscanf(inConfigFile, "%d", &mLearnWaypointColors);
+    if (numRead != 1)
+    {
+        return 0;
+    }
+
+    numRead = fscanf(inConfigFile, "%d", &mLearningStartDelay);
+    if (numRead != 1)
+    {
+        return 0;
+    }
+
+    numRead = fscanf(inConfigFile, "%d", &mBetweenColorLearningDelay);
+    if (numRead != 1)
+    {
+        return 0;
+    }
+
+    numRead = fscanf(inConfigFile, "%d", &mNumWaypoints);
+    if (numRead != 1)
+    {
+        return 0;
+    }
+
+    mWaypoints = new double[mNumWaypoints];
+
+    for (int i = 0; i < mNumWaypoints; i++)
+    {
+        double hue;
+
+        numRead = fscanf(inConfigFile, "%lf", &hue);
+        if (numRead != 1)
+        {
+            return 0;
+        }
+
+        mWaypoints[i] = hue;
+    }
+
+    // success
+    return 1;
+}
+
 #endif

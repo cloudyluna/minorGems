@@ -2,15 +2,15 @@
  * Modification History
  *
  * 2002-February-25    Jason Rohrer
- * Created.  
+ * Created.
  *
  * 2002-March-11    Jason Rohrer
- * Added a missing include.  
+ * Added a missing include.
  *
  * 2002-April-8    Jason Rohrer
- * Fixed a casting, dereferencing Win32 compile bug.  
+ * Fixed a casting, dereferencing Win32 compile bug.
  * Changed to be thread-safe.
- * Changed to use thread-safe printing function. 
+ * Changed to use thread-safe printing function.
  *
  * 2002-April-8    Jason Rohrer
  * Fixed a signed-unsigned mismatch.
@@ -38,7 +38,6 @@
  * compilers.
  */
 
-
 #include "PrintLog.h"
 
 #include "minorGems/system/Time.h"
@@ -46,99 +45,80 @@
 #include "minorGems/util/printUtils.h"
 #include "minorGems/util/stringUtils.h"
 
-
-#include <time.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
-#include <stdarg.h>
-
+#include <time.h>
 
 const char *PrintLog::mDefaultLoggerName = "general";
 
+PrintLog::PrintLog() : mLoggingLevel(Log::TRACE_LEVEL), mLock(new MutexLock())
+{
+}
 
-
-PrintLog::PrintLog()
-    : mLoggingLevel( Log::TRACE_LEVEL ),
-      mLock( new MutexLock() ) {
-    
-    }
-
-
-
-PrintLog::~PrintLog() {
+PrintLog::~PrintLog()
+{
     delete mLock;
-    }
+}
 
-
-
-void PrintLog::setLoggingLevel( int inLevel ) {
+void PrintLog::setLoggingLevel(int inLevel)
+{
     mLock->lock();
     mLoggingLevel = inLevel;
     mLock->unlock();
-    }
+}
 
-
-
-int PrintLog::getLoggingLevel() {
+int PrintLog::getLoggingLevel()
+{
     mLock->lock();
     int level = mLoggingLevel;
     mLock->unlock();
-    
+
     return level;
-    }
+}
 
-
-
-void PrintLog::logString( int inLevel, const char* inFormatString, ... ) {
-
-    va_list argList;
-    va_start( argList, inFormatString );
-
-    logStringV( inLevel, inFormatString, argList );
-    
-    va_end( argList );
-    }
-
-
-
-void PrintLog::logPrintf( int inLevel, const char* inFormatString, ... ) {
+void PrintLog::logString(int inLevel, const char *inFormatString, ...)
+{
 
     va_list argList;
-    va_start( argList, inFormatString );
+    va_start(argList, inFormatString);
 
-    logStringV( inLevel, inFormatString, argList );
-    
-    va_end( argList );
-    }
+    logStringV(inLevel, inFormatString, argList);
 
+    va_end(argList);
+}
 
-
-void PrintLog::logString( const char *inLoggerName,
-                          int inLevel, 
-                          const char* inFormatString, ... ) {
+void PrintLog::logPrintf(int inLevel, const char *inFormatString, ...)
+{
 
     va_list argList;
-    va_start( argList, inFormatString );
+    va_start(argList, inFormatString);
 
-    logStringV( inLoggerName, inLevel, inFormatString, argList );
-    
-    va_end( argList );
-    }
+    logStringV(inLevel, inFormatString, argList);
 
+    va_end(argList);
+}
 
+void PrintLog::logString(const char *inLoggerName, int inLevel, const char *inFormatString, ...)
+{
 
-void PrintLog::logStringV( int inLevel, const char* inFormatString,
-                           va_list inArgList ) {
-    
-    logStringV( mDefaultLoggerName, inLevel, inFormatString, inArgList );
-    }
+    va_list argList;
+    va_start(argList, inFormatString);
 
+    logStringV(inLoggerName, inLevel, inFormatString, argList);
 
-        
-void PrintLog::logStringV( const char *inLoggerName,
-                           int inLevel, const char* inFormatString,
-                           va_list inArgList ) {
-    
+    va_end(argList);
+}
+
+void PrintLog::logStringV(int inLevel, const char *inFormatString, va_list inArgList)
+{
+
+    logStringV(mDefaultLoggerName, inLevel, inFormatString, inArgList);
+}
+
+void PrintLog::logStringV(const char *inLoggerName, int inLevel, const char *inFormatString, va_list inArgList)
+{
+
     // not thread-safe to read mLoggingLevel here
     // without synchronization.
     // However, we want logging calls that are above
@@ -147,111 +127,90 @@ void PrintLog::logStringV( const char *inLoggerName,
     // Besides, not being thread-safe in this case might
     // (worst case) result in a missed log entry or
     // an extra log entry... but setting the logging level should be rare.
-    if( inLevel <= mLoggingLevel ) {
+    if (inLevel <= mLoggingLevel)
+    {
 
-        
-        char *message = generateLogMessage( inLoggerName,
-                                            inLevel,
-                                            inFormatString, inArgList );
+        char *message = generateLogMessage(inLoggerName, inLevel, inFormatString, inArgList);
 
-        threadPrintF( "%s\n", message );
-        
-        delete [] message;
-        }
+        threadPrintF("%s\n", message);
+
+        delete[] message;
     }
-
-
+}
 
 // visual studio doesn't have va_copy
 // suggested fix here:
 // https://stackoverflow.com/questions/558223/va-copy-porting-to-visual-c
 #ifndef va_copy
-    #define va_copy( dest, src ) ( dest = src )
+#define va_copy(dest, src) (dest = src)
 #endif
 
+char *PrintLog::generatePlainMessage(const char *inFormatString, va_list inArgList)
+{
 
-
-char *PrintLog::generatePlainMessage( const char *inFormatString,
-                                      va_list inArgList ) {
-    
     // use copy to preserve inArgList
     // this allows multiple calls of generatePlainMessage with the same list
     va_list listCopy;
-    va_copy( listCopy, inArgList );
-    
+    va_copy(listCopy, inArgList);
 
     unsigned int bufferSize = 200;
 
-    
-    char *buffer = new char[ bufferSize ];
-    
-    int stringLength =
-        vsnprintf( buffer, bufferSize, inFormatString, listCopy );
-    
-    va_end( listCopy );
+    char *buffer = new char[bufferSize];
 
-    while( stringLength == -1 || stringLength >= (int)bufferSize ) {
+    int stringLength = vsnprintf(buffer, bufferSize, inFormatString, listCopy);
+
+    va_end(listCopy);
+
+    while (stringLength == -1 || stringLength >= (int)bufferSize)
+    {
         // too long!
-        delete [] buffer;
+        delete[] buffer;
 
         // double buffer size and try again
         bufferSize *= 2;
-        buffer = new char[ bufferSize ];
-    
+        buffer = new char[bufferSize];
+
         // make another working copy
-        va_copy( listCopy, inArgList );
+        va_copy(listCopy, inArgList);
 
-        stringLength = 
-            vsnprintf( buffer, bufferSize, inFormatString, listCopy );
-        
-        va_end( listCopy );
-        }
+        stringLength = vsnprintf(buffer, bufferSize, inFormatString, listCopy);
 
-    return buffer;
+        va_end(listCopy);
     }
 
+    return buffer;
+}
 
+char *PrintLog::generateLogMessage(const char *inLoggerName, int inLevel, const char *inFormatString, va_list inArgList)
+{
 
-char *PrintLog::generateLogMessage( const char *inLoggerName, 
-                                    int inLevel, 
-                                    const char *inFormatString,
-                                    va_list inArgList ) {
-    
-    char *buffer = generatePlainMessage( inFormatString, inArgList );
-    
-
+    char *buffer = generatePlainMessage(inFormatString, inArgList);
 
     timeSec_t seconds;
     unsigned long milliseconds;
-    
-    Time::getCurrentTime( &seconds, &milliseconds );
 
-    time_t timeT = time( NULL );
-    
-    
+    Time::getCurrentTime(&seconds, &milliseconds);
+
+    time_t timeT = time(NULL);
+
     // lock around ctime call, since it returns a static buffer
     mLock->lock();
 
-    char *dateString = stringDuplicate( ctime( &timeT ) );
-    
+    char *dateString = stringDuplicate(ctime(&timeT));
+
     // done with static buffer, since we made a copy
     mLock->unlock();
 
-    
     // this date string ends with a newline...
-	// get rid of it
-	dateString[ strlen(dateString) - 1 ] = '\0';
-    
-    char *messageBuffer = autoSprintf( "L%d | %s (%ld ms) | %s | %s",
-                                       inLevel, dateString, milliseconds,
-                                       inLoggerName, buffer );
-    
-    delete [] dateString;
-    
-    delete [] buffer;
+    // get rid of it
+    dateString[strlen(dateString) - 1] = '\0';
 
-    
+    char *messageBuffer =
+        autoSprintf("L%d | %s (%ld ms) | %s | %s", inLevel, dateString, milliseconds, inLoggerName, buffer);
+
+    delete[] dateString;
+
+    delete[] buffer;
+
     return messageBuffer;
-    }
-
-
+}

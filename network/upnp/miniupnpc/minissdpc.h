@@ -8,8 +8,6 @@
 #ifndef __MINISSDPC_H__
 #define __MINISSDPC_H__
 
-struct UPNPDev *
-getDevicesFromMiniSSDPD(const char * devtype, const char * socketpath);
+struct UPNPDev *getDevicesFromMiniSSDPD(const char *devtype, const char *socketpath);
 
 #endif
-

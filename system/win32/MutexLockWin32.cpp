@@ -5,8 +5,8 @@
  * Created.
  *
  * 2001-March-4		Jason Rohrer
- * Replaced include of <winbase.h> and <windef.h> with <windows.h> 
- * to fix compile bugs encountered with newer windows compilers.   
+ * Replaced include of <winbase.h> and <windef.h> with <windows.h>
+ * to fix compile bugs encountered with newer windows compilers.
  *
  * 2002-October-18    Jason Rohrer
  * Moved common include out of header and into platform-specific cpp files,
@@ -20,62 +20,53 @@
 
 #include "minorGems/common.h"
 
-
-
 #include "minorGems/system/MutexLock.h"
 
-#include <windows.h>
 #include <stdlib.h>
-
-
+#include <windows.h>
 
 /**
  * Win32-specific implementation of the MutexLock class member functions.
  */
 
+MutexLock::MutexLock()
+{
+    // allocate a handle on the heap
+    mNativeObjectPointer = malloc(sizeof(HANDLE));
 
-MutexLock::MutexLock() {
-	// allocate a handle on the heap
-	mNativeObjectPointer = malloc( sizeof( HANDLE ) );
-	
-	// retrieve handle from the heap
-	HANDLE *mutexPointer = (HANDLE *)mNativeObjectPointer;
-	
-	// create the mutex
-	*mutexPointer = CreateMutex(
-		(LPSECURITY_ATTRIBUTES) NULL,	//  no attributes
-  		(BOOL) false,			// not initially locked
-  		(LPCTSTR) NULL );		// no name
-	}
+    // retrieve handle from the heap
+    HANDLE *mutexPointer = (HANDLE *)mNativeObjectPointer;
 
+    // create the mutex
+    *mutexPointer = CreateMutex((LPSECURITY_ATTRIBUTES)NULL, //  no attributes
+                                (BOOL) false,                // not initially locked
+                                (LPCTSTR)NULL);              // no name
+}
 
+MutexLock::~MutexLock()
+{
+    // retrieve handle from the heap
+    HANDLE *mutexPointer = (HANDLE *)mNativeObjectPointer;
 
-MutexLock::~MutexLock() {
-	// retrieve handle from the heap
-	HANDLE *mutexPointer = (HANDLE *)mNativeObjectPointer;
-	  
-	// destroy the mutex	
-	CloseHandle( *mutexPointer );
-	
-	// de-allocate the mutex structure from the heap
-	free( mutexPointer );
-	}
+    // destroy the mutex
+    CloseHandle(*mutexPointer);
 
+    // de-allocate the mutex structure from the heap
+    free(mutexPointer);
+}
 
+void MutexLock::lock()
+{
+    // retrieve handle from the heap
+    HANDLE *mutexPointer = (HANDLE *)mNativeObjectPointer;
 
-void MutexLock::lock() {
-	// retrieve handle from the heap
-	HANDLE *mutexPointer = (HANDLE *)mNativeObjectPointer;
-	
-	WaitForSingleObject( *mutexPointer, INFINITE );
-	}
+    WaitForSingleObject(*mutexPointer, INFINITE);
+}
 
+void MutexLock::unlock()
+{
+    // retrieve handle from the heap
+    HANDLE *mutexPointer = (HANDLE *)mNativeObjectPointer;
 
-
-void MutexLock::unlock() {
-	// retrieve handle from the heap
-	HANDLE *mutexPointer = (HANDLE *)mNativeObjectPointer;
-	
-	ReleaseMutex( *mutexPointer );
-	}
-
+    ReleaseMutex(*mutexPointer);
+}

@@ -12,22 +12,23 @@
 #ifndef TRAINING_EXAMPLE_INCLUDED
 #define TRAINING_EXAMPLE_INCLUDED
 
-
 /**
  * Abstract interface for examples used in training.
  *
- * @author Jason Rohrer 
+ * @author Jason Rohrer
  */
-class TrainingExample {
-	public:
-		// need to include a virtual function so
-		// that dynamic casts work
-		virtual ~TrainingExample();
-	};
+class TrainingExample
+{
+  public:
+    // need to include a virtual function so
+    // that dynamic casts work
+    virtual ~TrainingExample();
+};
 
-inline TrainingExample::~TrainingExample() {
-	// do nothing here.
-	// Just included so dynamic casts would work.
-	}
-	
+inline TrainingExample::~TrainingExample()
+{
+    // do nothing here.
+    // Just included so dynamic casts would work.
+}
+
 #endif

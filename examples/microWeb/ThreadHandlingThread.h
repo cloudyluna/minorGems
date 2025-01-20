@@ -2,12 +2,11 @@
  * Modification History
  *
  * 2001-May-11   Jason Rohrer
- * Created.  
+ * Created.
  */
- 
- 
+
 #ifndef THREAD_HANDLING_THREAD_INCLUDED
-#define THREAD_HANDLING_THREAD_INCLUDED 
+#define THREAD_HANDLING_THREAD_INCLUDED
 
 #include "RequestHandlingThread.h"
 
@@ -15,9 +14,8 @@
 
 #include "minorGems/util/SimpleVector.h"
 
-#include <string.h>
 #include <stdio.h>
-
+#include <string.h>
 
 /**
  * Thread handler for the microWeb server.  Runs periodically
@@ -25,133 +23,119 @@
  *
  * @author Jason Rohrer.
  */
-class ThreadHandlingThread : public Thread {
+class ThreadHandlingThread : public Thread
+{
 
-	public:
+  public:
+    /**
+     * Construct a handler.
+     */
+    ThreadHandlingThread();
 
-		/**
-		 * Construct a handler.
-		 */
-		ThreadHandlingThread();
+    ~ThreadHandlingThread();
 
-		~ThreadHandlingThread();
+    /**
+     * Adds a thread to the set managed by this handler.
+     *
+     * @param inThread the thread to add.
+     */
+    void addThread(RequestHandlingThread *inThread);
 
-		/**
-		 * Adds a thread to the set managed by this handler.
-		 *
-		 * @param inThread the thread to add.
-		 */
-		void addThread( RequestHandlingThread *inThread );
-		
-		
-		// implements the Thread interface
-		virtual void run();
-		
-	private:
+    // implements the Thread interface
+    virtual void run();
 
-		SimpleVector<RequestHandlingThread*> *mThreadVector;
-		
-		MutexLock *mLock;
-	};
+  private:
+    SimpleVector<RequestHandlingThread *> *mThreadVector;
 
-
+    MutexLock *mLock;
+};
 
 inline ThreadHandlingThread::ThreadHandlingThread()
-	: mLock( new MutexLock ),
-	  mThreadVector( new SimpleVector<RequestHandlingThread*> ) {
+    : mLock(new MutexLock), mThreadVector(new SimpleVector<RequestHandlingThread *>)
+{
+}
 
-	}
+inline ThreadHandlingThread::~ThreadHandlingThread()
+{
+    mLock->lock();
 
+    int numThreads = mThreadVector->size();
 
+    // join each thread and delete it
+    for (int i = 0; i < numThreads; i++)
+    {
+        RequestHandlingThread *thread = *(mThreadVector->getElement(i));
 
-inline ThreadHandlingThread::~ThreadHandlingThread() {
-	mLock->lock();
+        thread->join();
+        delete thread;
+    }
 
-	int numThreads = mThreadVector->size();
+    delete mThreadVector;
 
-	// join each thread and delete it
-	for( int i=0; i<numThreads; i++ ) {
-		RequestHandlingThread *thread =
-			*( mThreadVector->getElement( i ) );
+    mLock->unlock();
 
-		thread->join();
-		delete thread;
-		}
+    delete mLock;
+}
 
-	
-	delete mThreadVector;
+inline void ThreadHandlingThread::addThread(RequestHandlingThread *inThread)
+{
+    mLock->lock();
 
-	mLock->unlock();
+    mThreadVector->push_back(inThread);
 
-	
-	delete mLock;
-	}
+    mLock->unlock();
+}
 
+inline void ThreadHandlingThread::run()
+{
 
+    while (true)
+    {
 
-inline void ThreadHandlingThread::addThread(
-	RequestHandlingThread *inThread ) {
-	mLock->lock();
+        // sleep for 10 seconds
+        sleep(10000);
 
-	mThreadVector->push_back( inThread );
-	
-	mLock->unlock();
-	}
+        // printf( "Thread handler looking for finished threads\n" );
 
+        // look for threads that need to be deleted
+        mLock->lock();
 
+        char threadFound = true;
 
-inline void ThreadHandlingThread::run() {
+        // examine each thread
+        while (threadFound)
+        {
+            threadFound = false;
 
-	while( true ) {
-		
-		// sleep for 10 seconds 
-		sleep( 10000 );
+            int numThreads = mThreadVector->size();
 
-		// printf( "Thread handler looking for finished threads\n" );
-		
-		// look for threads that need to be deleted
-		mLock->lock();
+            for (int i = 0; i < numThreads; i++)
+            {
+                RequestHandlingThread *thread = *(mThreadVector->getElement(i));
 
-		
+                if (thread->isDone())
+                {
 
-		char threadFound = true;
-		
-		// examine each thread
-		while( threadFound ) {
-			threadFound = false;
+                    // join the thread before destroying it
+                    // to prevent memory leaks
+                    thread->join();
 
-			int numThreads = mThreadVector->size();
-			
-			for( int i=0; i<numThreads; i++ ) {
-				RequestHandlingThread *thread =
-					*( mThreadVector->getElement( i ) );
+                    // remove the thread from the vector and delete it
+                    // printf( "deleting a thread\n" );
+                    mThreadVector->deleteElement(i);
+                    delete thread;
 
-				if( thread->isDone() ) {
+                    threadFound = true;
 
-					// join the thread before destroying it
-					// to prevent memory leaks
-					thread->join();
-					
-					// remove the thread from the vector and delete it
-					// printf( "deleting a thread\n" );
-					mThreadVector->deleteElement( i );
-					delete thread;
+                    // jump out of the for loop, since our
+                    // vector size has changed
+                    i = numThreads;
+                }
+            }
+        }
 
-					threadFound = true;
-					
-					// jump out of the for loop, since our
-					// vector size has changed
-					i = numThreads;
-					}
-				}
-
-			}
-		
-		mLock->unlock();
-		}
-	
-	}
-
-
+        mLock->unlock();
+    }
+}
 
 #endif

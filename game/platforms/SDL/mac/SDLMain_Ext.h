@@ -1,8 +1,9 @@
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-extern void NSMenu_setMenuBarVisible(int flag);
+    extern void NSMenu_setMenuBarVisible(int flag);
 
 #ifdef __cplusplus
 }

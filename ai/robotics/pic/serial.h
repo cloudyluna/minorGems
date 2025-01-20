@@ -20,24 +20,21 @@
  * definition.
  */
 
-
-
 /**
  * A collection of serial utility functions.
  *
  * @author Jason Rohrer
  */
 
-
 // settings for software serial
 // code copied from:
 // http://www.iptel-now.de/HOWTO/PIC/pic.html
 
-//RS232 settings
+// RS232 settings
 #pragma RS232_TXPORT PORTA
 #pragma RS232_RXPORT PORTA
-#pragma RS232_TXPIN  1
-#pragma RS232_RXPIN  4
+#pragma RS232_TXPIN 1
+#pragma RS232_RXPIN 4
 
 // switch BAUD rates for different applications
 #ifndef B12_CONTROL
@@ -50,12 +47,10 @@
 
 #pragma TRUE_RS232 1
 
-//Timing settings
+// Timing settings
 #pragma CLOCK_FREQ 10000000
 
 // end copied code
-
-
 
 /**
  * Sets up the chip for serial transmission.  Must be called
@@ -63,16 +58,12 @@
  */
 void serialSetup();
 
-
-
 /**
  * Skips a specified number of input bytes on the serial port.
  *
  * @param inNumBytes the number of bytes to skip.
  */
-void skipBytes( int inNumBytes );
-
-
+void skipBytes(int inNumBytes);
 
 /**
  * Reads bytes from the serial port and discards them
@@ -80,20 +71,4 @@ void skipBytes( int inNumBytes );
  *
  * @param inByte the byte to wait for.
  */
-void waitForByte( char inByte );
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+void waitForByte(char inByte);

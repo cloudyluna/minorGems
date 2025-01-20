@@ -7,12 +7,8 @@
 
 #include "minorGems/common.h"
 
-
-
 #ifndef PRINT_UTILS_INCLUDED
 #define PRINT_UTILS_INCLUDED
-
-
 
 /**
  * A thread-safe version of printf.
@@ -24,8 +20,6 @@
  * @param ...  a variable argument list, with the same usage
  *   pattern as printf.
  */
-int threadPrintF( const char* inFormatString, ... );
-
-
+int threadPrintF(const char *inFormatString, ...);
 
 #endif

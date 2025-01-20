@@ -21,17 +21,11 @@
  * Changed to virtual inheritance from Thread class.
  */
 
-
-
 #ifndef FINISHED_SIGNAL_THREAD_INCLUDED
 #define FINISHED_SIGNAL_THREAD_INCLUDED
 
-
-
-#include "minorGems/system/Thread.h"
 #include "minorGems/system/MutexLock.h"
-
-
+#include "minorGems/system/Thread.h"
 
 /**
  * Abstract subclass if thread that has a
@@ -39,62 +33,40 @@
  *
  * @author Jason Rohrer
  */
-class FinishedSignalThread : public virtual Thread {
+class FinishedSignalThread : public virtual Thread
+{
 
+  public:
+    /**
+     * Only destroys this thread.
+     * Does not join.
+     */
+    virtual ~FinishedSignalThread();
 
+    /**
+     * Gets whether this thread is finished and
+     * ready to be destroyed.
+     *
+     * @return true iff this thread is finished.
+     */
+    char isFinished();
 
-    public:
+  protected:
+    FinishedSignalThread();
 
+    /**
+     * Sets that this thread is finished and
+     * ready to be destroyed.
+     *
+     * For this class to work properly, the subclass
+     * MUST call this function at the end of its run method.
+     */
+    void setFinished();
 
-        /**
-         * Only destroys this thread.
-         * Does not join.
-         */
-        virtual ~FinishedSignalThread();
+  private:
+    MutexLock *mFinishedLock;
 
-
-        
-        /**
-         * Gets whether this thread is finished and
-         * ready to be destroyed.
-         *
-         * @return true iff this thread is finished.
-         */
-        char isFinished();
-
-
-        
-
-
-    protected:
-
-
-        
-        FinishedSignalThread();
-
-        
-        
-        /**
-         * Sets that this thread is finished and
-         * ready to be destroyed.
-         *
-         * For this class to work properly, the subclass
-         * MUST call this function at the end of its run method.
-         */
-        void setFinished();
-
-        
-
-    private:
-
-        MutexLock *mFinishedLock;
-
-        char mFinished;
-
-        
-        
-    };
-
-
+    char mFinished;
+};
 
 #endif

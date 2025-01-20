@@ -19,167 +19,156 @@
  * Added a getOrderedHost function that returns hosts in linear order.
  */
 
-
-
 #include "minorGems/network/p2pParts/HostCatcher.h"
-#include "minorGems/util/stringUtils.h"
 #include "minorGems/util/random/StdRandomSource.h"
+#include "minorGems/util/stringUtils.h"
 
+HostCatcher::HostCatcher(int inMaxListSize)
+    : mMaxListSize(inMaxListSize), mHostVector(new SimpleVector<HostAddress *>()), mLock(new MutexLock()),
+      mRandSource(new StdRandomSource())
+{
+}
 
-
-HostCatcher::HostCatcher( int inMaxListSize )
-    : mMaxListSize( inMaxListSize ),
-      mHostVector( new SimpleVector<HostAddress *>() ),
-      mLock( new MutexLock() ),
-      mRandSource( new StdRandomSource() ) {
-    
-    }
-
-
-        
-HostCatcher::~HostCatcher() {
+HostCatcher::~HostCatcher()
+{
     mLock->lock();
-    
+
     int numHosts = mHostVector->size();
 
-    for( int i=0; i<numHosts; i++ ) {
-        delete *( mHostVector->getElement( i ) );
-        }
+    for (int i = 0; i < numHosts; i++)
+    {
+        delete *(mHostVector->getElement(i));
+    }
 
     delete mHostVector;
-    
+
     mLock->unlock();
 
     delete mLock;
     delete mRandSource;
-    }
+}
 
-    
-
-void HostCatcher::addHost( HostAddress * inHost ) {
-    
+void HostCatcher::addHost(HostAddress *inHost)
+{
 
     // convert to numerical form once and for all here
     // (to avoid converting over and over in equals checks below)
     HostAddress *numericalAddress = inHost->getNumericalAddress();
 
-    if( numericalAddress != NULL ) {
+    if (numericalAddress != NULL)
+    {
 
         mLock->lock();
-        
+
         // make sure this host doesn't already exist in our list
         char exists = false;
-    
-        int numHosts = mHostVector->size();
-    
-        for( int i=0; i<numHosts; i++ ) {
-            HostAddress *otherHost =  *( mHostVector->getElement( i ) );
 
-            if( otherHost->equals( numericalAddress ) ) {
+        int numHosts = mHostVector->size();
+
+        for (int i = 0; i < numHosts; i++)
+        {
+            HostAddress *otherHost = *(mHostVector->getElement(i));
+
+            if (otherHost->equals(numericalAddress))
+            {
                 exists = true;
                 // jump out of loop
                 i = numHosts;
-                }
             }
-    
-    
-    
-        if( !exists ) {
-            mHostVector->push_back( numericalAddress->copy() );
-            }
-        
-    
-        while( mHostVector->size() > mMaxListSize ) {
+        }
+
+        if (!exists)
+        {
+            mHostVector->push_back(numericalAddress->copy());
+        }
+
+        while (mHostVector->size() > mMaxListSize)
+        {
             // remove first host from queue
-            HostAddress *host = *( mHostVector->getElement( 0 ) );
-            mHostVector->deleteElement( 0 );
+            HostAddress *host = *(mHostVector->getElement(0));
+            mHostVector->deleteElement(0);
             delete host;
-            }
-    
+        }
+
         mLock->unlock();
 
         delete numericalAddress;
-        }
     }
+}
 
-
-
-HostAddress * HostCatcher::getHostOrdered(  ) {
+HostAddress *HostCatcher::getHostOrdered()
+{
 
     mLock->lock();
-    
+
     int numHosts = mHostVector->size();
 
-    if( numHosts == 0 ) {
+    if (numHosts == 0)
+    {
         mLock->unlock();
         return NULL;
-        }
+    }
 
     // remove first host from queue
-    HostAddress *host = *( mHostVector->getElement( 0 ) );
-    mHostVector->deleteElement( 0 );
+    HostAddress *host = *(mHostVector->getElement(0));
+    mHostVector->deleteElement(0);
 
     // add host to end of queue
-    mHostVector->push_back( host );
+    mHostVector->push_back(host);
 
     HostAddress *hostCopy = host->copy();
 
-    
     mLock->unlock();
-    
-    return hostCopy;   
-    }
 
+    return hostCopy;
+}
 
-
-HostAddress * HostCatcher::getHost(  ) {
+HostAddress *HostCatcher::getHost()
+{
 
     mLock->lock();
-    
+
     int numHosts = mHostVector->size();
 
-    if( numHosts == 0 ) {
+    if (numHosts == 0)
+    {
         mLock->unlock();
         return NULL;
-        }
+    }
 
     // remove random host from queue
-    int index = mRandSource->getRandomBoundedInt( 0, numHosts - 1 ); 
-    HostAddress *host = *( mHostVector->getElement( index ) );
-    mHostVector->deleteElement( index );
+    int index = mRandSource->getRandomBoundedInt(0, numHosts - 1);
+    HostAddress *host = *(mHostVector->getElement(index));
+    mHostVector->deleteElement(index);
 
     // add host to end of queue
-    mHostVector->push_back( host );
+    mHostVector->push_back(host);
 
     HostAddress *hostCopy = host->copy();
 
-    
     mLock->unlock();
-    
-    return hostCopy;   
-    }
 
+    return hostCopy;
+}
 
-
-SimpleVector<HostAddress *> *HostCatcher::getHostList(
-    int inMaxHostCount,
-    HostAddress *inSkipHost ) {
+SimpleVector<HostAddress *> *HostCatcher::getHostList(int inMaxHostCount, HostAddress *inSkipHost)
+{
 
     HostAddress *hostToSkip;
 
-    if( inSkipHost != NULL ) {
+    if (inSkipHost != NULL)
+    {
         hostToSkip = inSkipHost->copy();
-        }
-    else {
+    }
+    else
+    {
         // don't skip any host
         // create a dummy host that won't match any other valid hosts
         // make sure dummy is in numerical form to avoid DNS lookups
-        hostToSkip = new HostAddress( stringDuplicate( "1.1.1.1" ), 1 );
-        }
-             
-    
-    SimpleVector<HostAddress *> *collectedHosts =
-        new SimpleVector<HostAddress *>();
+        hostToSkip = new HostAddress(stringDuplicate("1.1.1.1"), 1);
+    }
+
+    SimpleVector<HostAddress *> *collectedHosts = new SimpleVector<HostAddress *>();
 
     char repeat = false;
     int numCollected = 0;
@@ -195,102 +184,102 @@ SimpleVector<HostAddress *> *HostCatcher::getHostList(
 
     HostAddress *firstHost = getHostOrdered();
 
-    if( firstHost == NULL ) {
+    if (firstHost == NULL)
+    {
         // the catcher is empty
 
         delete hostToSkip;
 
         // an empty host list
-        return collectedHosts;       
-        }
-    
+        return collectedHosts;
+    }
 
-    if( ! hostToSkip->equals( firstHost ) ) {
-        collectedHosts->push_back( firstHost );
+    if (!hostToSkip->equals(firstHost))
+    {
+        collectedHosts->push_back(firstHost);
         numCollected++;
-        }
+    }
 
-    
-    while( numCollected < inMaxHostCount && !repeat ) {
+    while (numCollected < inMaxHostCount && !repeat)
+    {
 
         HostAddress *nextHost = getHostOrdered();
 
-        if( nextHost->equals( firstHost ) ) {
+        if (nextHost->equals(firstHost))
+        {
             delete nextHost;
             repeat = true;
-            }
-        else {
-            if( ! hostToSkip->equals( nextHost ) ) {
-                collectedHosts->push_back( nextHost );
-                numCollected++;
-                }
-            else {
-                delete nextHost;
-                }
-            }
-        
         }
+        else
+        {
+            if (!hostToSkip->equals(nextHost))
+            {
+                collectedHosts->push_back(nextHost);
+                numCollected++;
+            }
+            else
+            {
+                delete nextHost;
+            }
+        }
+    }
 
-
-    if( hostToSkip->equals( firstHost ) ) {
+    if (hostToSkip->equals(firstHost))
+    {
         // we didn't include firstHost in our collectedHosts, so
         // we must delete it.
         delete firstHost;
-        }
+    }
 
-    
     delete hostToSkip;
 
     return collectedHosts;
-    }
+}
 
-
-
-void HostCatcher::addHostList( SimpleVector<HostAddress *> * inHostList ) {
+void HostCatcher::addHostList(SimpleVector<HostAddress *> *inHostList)
+{
     int numToAdd = inHostList->size();
 
-    for( int i=0; i<numToAdd; i++ ) {
-        addHost( *( inHostList->getElement( i ) ) );
-        }
+    for (int i = 0; i < numToAdd; i++)
+    {
+        addHost(*(inHostList->getElement(i)));
     }
+}
 
-
-
-void HostCatcher::noteHostBad( HostAddress * inHost ) {
+void HostCatcher::noteHostBad(HostAddress *inHost)
+{
     mLock->lock();
-    
+
     // make sure this host already exists in our list
     char exists = false;
 
     HostAddress *foundHost = NULL;
-    
+
     int numHosts = mHostVector->size();
 
-    for( int i=0; i<numHosts; i++ ) {
-        HostAddress *otherHost =  *( mHostVector->getElement( i ) );
+    for (int i = 0; i < numHosts; i++)
+    {
+        HostAddress *otherHost = *(mHostVector->getElement(i));
 
-        if( otherHost->equals( inHost ) ) {
+        if (otherHost->equals(inHost))
+        {
             exists = true;
 
             // delete the host that we've found
-            mHostVector->deleteElement( i );
+            mHostVector->deleteElement(i);
 
             foundHost = otherHost;
-            
+
             // jump out of loop
             i = numHosts;
-            }
         }
+    }
 
-    
-    if( exists ) {
+    if (exists)
+    {
         delete foundHost;
-        //mHostVector->push_back( foundHost );
-        }
+        // mHostVector->push_back( foundHost );
+    }
 
     mLock->unlock();
-    }
-    
-
-
-
+}

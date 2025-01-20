@@ -10,19 +10,18 @@
  * Changed so that rows are filled before adding new columns.
  * Fixed a bug in setSelectedIndex.
  */
- 
- 
+
 #ifndef MULTI_BUTTON_GL_INCLUDED
-#define MULTI_BUTTON_GL_INCLUDED 
+#define MULTI_BUTTON_GL_INCLUDED
 
 #include "GUIContainerGL.h"
 #include "StickyButtonGL.h"
 
 #include "minorGems/graphics/Image.h"
 
-#include "minorGems/ui/event/ActionListenerList.h"
-#include "minorGems/ui/event/ActionListener.h"
 #include "minorGems/ui/GUIComponent.h"
+#include "minorGems/ui/event/ActionListener.h"
+#include "minorGems/ui/event/ActionListenerList.h"
 
 #include <math.h>
 #include <stdio.h>
@@ -33,282 +32,241 @@
  *
  * @author Jason Rohrer
  */
-class MultiButtonGL : public GUIContainerGL,
-					public ActionListener,
-					public ActionListenerList {
+class MultiButtonGL : public GUIContainerGL, public ActionListener, public ActionListenerList
+{
 
+  public:
+    /**
+     * Constructs a set of buttons.
+     *
+     * @param inAnchorX the x position of the upper left corner
+     *   of this component.
+     * @param inAnchorY the y position of the upper left corner
+     *   of this component.
+     * @param inWidth the width of this component.
+     * @param inHeight the height of this component.
+     * @param inNumButtons the number of buttons in the set.
+     * @param inUnpressedImages the images to display
+     *   when each button is unpressed.  Images must have dimensions
+     *   that are powers of 2.
+     *   Will be destroyed when this class is destroyed.
+     * @param inPressedImages the images to display
+     *   when each button is pressed.  Images must have dimensions
+     *   that are powers of 2.
+     *   Will be destroyed when this class is destroyed.
+     * @param inGutterFraction the fraction of each row
+     *   and column that should be taken up by the gutters
+     *   (the spaces between buttons).  In [0, 1.0].
+     */
+    MultiButtonGL(double inAnchorX, double inAnchorY, double inWidth, double inHeight, int inNumButtons,
+                  Image **inUnpressedImages, Image **inPressedImages, double inGutterFraction);
 
-	public:
+    ~MultiButtonGL();
 
+    /**
+     * Sets the currently depressed button.
+     *
+     * Note that if this function causes a change
+     * in the state of the set, an action will
+     * be fired to all registered listeners.
+     *
+     * @param inButtonIndex the index of the button to depress.
+     */
+    void setSelectedButton(int inButtonIndex);
 
-		
-		/**
-		 * Constructs a set of buttons.
-		 *
-		 * @param inAnchorX the x position of the upper left corner
-		 *   of this component.
-		 * @param inAnchorY the y position of the upper left corner
-		 *   of this component.
-		 * @param inWidth the width of this component.
-		 * @param inHeight the height of this component.
-		 * @param inNumButtons the number of buttons in the set.
-		 * @param inUnpressedImages the images to display
-		 *   when each button is unpressed.  Images must have dimensions
-		 *   that are powers of 2.
-		 *   Will be destroyed when this class is destroyed.
-		 * @param inPressedImages the images to display
-		 *   when each button is pressed.  Images must have dimensions
-		 *   that are powers of 2.
-		 *   Will be destroyed when this class is destroyed.
-		 * @param inGutterFraction the fraction of each row
-		 *   and column that should be taken up by the gutters
-		 *   (the spaces between buttons).  In [0, 1.0].
-		 */
-		MultiButtonGL(
-			double inAnchorX, double inAnchorY, double inWidth,
-			double inHeight, int inNumButtons,
-			Image **inUnpressedImages,
-			Image **inPressedImages,
-			double inGutterFraction );
+    /**
+     * Gets the index of the currently depressed button.
+     *
+     * Note that if this function causes a change
+     * in the state of the set, an action will
+     * be fired to all registered listeners.
+     *
+     * @return the index of the button that is depressed.
+     */
+    int getSelectedButton();
 
+    // we don't need to override any mouse
+    // or redraw functions, since the container
+    // and the buttons should handle these correctly
 
-		
-		~MultiButtonGL();
+    // implements the ActionListener interface
+    virtual void actionPerformed(GUIComponent *inTarget);
 
+  protected:
+    int mNumButtons;
 
-		
-		/**
-		 * Sets the currently depressed button.
-		 *
-		 * Note that if this function causes a change
-		 * in the state of the set, an action will
-		 * be fired to all registered listeners.
-		 *
-		 * @param inButtonIndex the index of the button to depress.
-		 */
-		void setSelectedButton( int inButtonIndex );
+    StickyButtonGL **mButtons;
 
+    int mSelectedIndex;
 
+    char mIgnoreEvents;
 
-		/**
-		 * Gets the index of the currently depressed button.
-		 *
-		 * Note that if this function causes a change
-		 * in the state of the set, an action will
-		 * be fired to all registered listeners.
-		 *
-		 * @return the index of the button that is depressed.
-		 */
-		int getSelectedButton();
+    /**
+     * Maps a button in mButtons to its index in the
+     * mButtons array.
+     *
+     * @param inButton the button to get an index for.
+     *
+     * @return the index of inButton in the mButtons array.
+     */
+    int buttonToIndex(StickyButtonGL *inButton);
+};
 
+inline MultiButtonGL::MultiButtonGL(double inAnchorX, double inAnchorY, double inWidth, double inHeight,
+                                    int inNumButtons, Image **inUnpressedImages, Image **inPressedImages,
+                                    double inGutterFraction)
+    : GUIContainerGL(inAnchorX, inAnchorY, inWidth, inHeight), mNumButtons(inNumButtons),
+      mButtons(new StickyButtonGL *[inNumButtons]), mSelectedIndex(0), mIgnoreEvents(false)
+{
 
-		
-		// we don't need to override any mouse
-		// or redraw functions, since the container
-		// and the buttons should handle these correctly
+    int numColumns = (int)(sqrt(mNumButtons));
+    int numRows = mNumButtons / numColumns;
 
+    while (numRows * numColumns < mNumButtons)
+    {
+        numRows++;
+    }
 
-		// implements the ActionListener interface
-		virtual void actionPerformed( GUIComponent *inTarget );
-		
-		
-	protected:
-		int mNumButtons;
-		
-		StickyButtonGL **mButtons;
+    // determine gutter and button sizes
 
+    double gutterSizeX;
+    double gutterSizeY;
 
-		int mSelectedIndex;
+    if (numRows == 1)
+    {
+        gutterSizeY = 0;
+    }
+    else
+    {
+        gutterSizeY = (inHeight * inGutterFraction) / (numRows - 1);
+    }
+    if (numColumns == 1)
+    {
+        gutterSizeX = 0;
+    }
+    else
+    {
+        gutterSizeX = (inWidth * inGutterFraction) / (numColumns - 1);
+    }
 
+    double buttonSizeX = (inWidth * (1 - inGutterFraction)) / (numColumns);
+    double buttonSizeY = (inHeight * (1 - inGutterFraction)) / (numRows);
 
-		char mIgnoreEvents;
-		
-		/**
-		 * Maps a button in mButtons to its index in the
-		 * mButtons array.
-		 *
-		 * @param inButton the button to get an index for.
-		 *
-		 * @return the index of inButton in the mButtons array.
-		 */
-		int buttonToIndex( StickyButtonGL *inButton );
+    // setup each button
 
-		
-		
-	};
+    int buttonIndex = 0;
 
+    for (int r = 0; r < numRows; r++)
+    {
+        for (int c = 0; c < numColumns; c++)
+        {
 
+            double anchorX = inAnchorX + c * (buttonSizeX + gutterSizeX);
+            double anchorY = inAnchorY + r * (buttonSizeY + gutterSizeY);
 
-inline MultiButtonGL::MultiButtonGL(
-	double inAnchorX, double inAnchorY, double inWidth,
-	double inHeight, int inNumButtons,
-	Image **inUnpressedImages,
-	Image **inPressedImages,
-	double inGutterFraction )
-	: GUIContainerGL( inAnchorX, inAnchorY, inWidth, inHeight ),
-	  mNumButtons( inNumButtons ),
-	  mButtons( new StickyButtonGL*[inNumButtons] ),
-	  mSelectedIndex( 0 ),
-	  mIgnoreEvents( false ) {
+            mButtons[buttonIndex] = new StickyButtonGL(anchorX, anchorY, buttonSizeX, buttonSizeY,
+                                                       inUnpressedImages[buttonIndex], inPressedImages[buttonIndex]);
 
-	int numColumns = (int)( sqrt( mNumButtons ) );
-	int numRows = mNumButtons / numColumns;
+            GUIContainerGL::add(mButtons[buttonIndex]);
 
-	
-	while( numRows * numColumns < mNumButtons ) {
-		numRows++;
-		}
+            buttonIndex++;
 
-	// determine gutter and button sizes
-	
-	double gutterSizeX;
-	double gutterSizeY;
-	
-	if( numRows == 1 ) {
-		gutterSizeY = 0;
-		}
-	else {
-		gutterSizeY =
-			( inHeight * inGutterFraction ) / ( numRows - 1 );
-		}
-	if( numColumns == 1 ) {
-		gutterSizeX = 0;
-		}
-	else {
-		gutterSizeX =
-			( inWidth * inGutterFraction ) / ( numColumns - 1 );
-		}
-	
-	
-	double buttonSizeX =
-		( inWidth * ( 1 - inGutterFraction ) ) / ( numColumns );
-	double buttonSizeY =
-		( inHeight * ( 1 - inGutterFraction ) ) / ( numRows );
+            if (buttonIndex >= mNumButtons)
+            {
+                // jump out of our loop if we run out of buttons
+                c = numColumns;
+                r = numRows;
+            }
+        }
+    }
 
+    // now we've added all of our buttons
 
-	// setup each button
-	
-	int buttonIndex = 0;
+    // press one of them before we add any listeners
+    mButtons[mSelectedIndex]->setPressed(true);
 
-	for( int r=0; r<numRows; r++ ) {
-		for( int c=0; c<numColumns; c++ ) {
-			
-			double anchorX = inAnchorX +
-				c * ( buttonSizeX + gutterSizeX );
-			double anchorY = inAnchorY +
-				r * ( buttonSizeY + gutterSizeY );
+    // now add ourselves as an action listener to each button
+    for (int i = 0; i < mNumButtons; i++)
+    {
+        mButtons[i]->addActionListener(this);
+    }
 
-			mButtons[ buttonIndex ] =
-				new StickyButtonGL( anchorX, anchorY,
-									buttonSizeX, buttonSizeY,
-									inUnpressedImages[ buttonIndex ],
-									inPressedImages[ buttonIndex ] );
+    // delete the arrays pointing to the images, since
+    // they are no longer needed
+    delete[] inUnpressedImages;
+    delete[] inPressedImages;
+}
 
-			GUIContainerGL::add( mButtons[ buttonIndex ] );
-			
-			buttonIndex++;
+inline MultiButtonGL::~MultiButtonGL()
+{
+    // note that we don't need to delete the buttons
+    // themselves, since they will be deleted by GUIContainer
+    // destructor
 
-			if( buttonIndex >= mNumButtons ) {
-				// jump out of our loop if we run out of buttons
-				c = numColumns;
-				r = numRows;
-				}
-			}
-		}
+    delete[] mButtons;
+}
 
-	// now we've added all of our buttons
+inline void MultiButtonGL::setSelectedButton(int inButtonIndex)
+{
+    // simply press the appropriate button, and let the
+    // action handlers do the rest
 
-	// press one of them before we add any listeners
-	mButtons[ mSelectedIndex ]->setPressed( true );
-	
+    mButtons[inButtonIndex]->setPressed(true);
+}
 
-	// now add ourselves as an action listener to each button
-	for( int i=0; i<mNumButtons; i++ ) {
-		mButtons[ i ]->addActionListener( this );
-		}
+inline int MultiButtonGL::getSelectedButton()
+{
+    return mSelectedIndex;
+}
 
-	// delete the arrays pointing to the images, since
-	// they are no longer needed
-	delete [] inUnpressedImages;
-	delete [] inPressedImages;
-	
-	}
+inline void MultiButtonGL::actionPerformed(GUIComponent *inTarget)
+{
+    if (!mIgnoreEvents)
+    {
+        int buttonIndex = buttonToIndex((StickyButtonGL *)inTarget);
 
+        // if another button is being pressed
+        if (buttonIndex != mSelectedIndex && mButtons[buttonIndex]->isPressed())
+        {
 
-		
-inline MultiButtonGL::~MultiButtonGL() {
-	// note that we don't need to delete the buttons
-	// themselves, since they will be deleted by GUIContainer
-	// destructor
-	
-	delete [] mButtons;
-	}
+            // unpress the old button, ignoring the resulting event
+            mIgnoreEvents = true;
+            mButtons[mSelectedIndex]->setPressed(false);
+            mIgnoreEvents = false;
 
+            mSelectedIndex = buttonIndex;
 
+            fireActionPerformed(this);
+        }
+        // else if our selected button is being unpressed
+        else if (buttonIndex == mSelectedIndex && !(mButtons[buttonIndex]->isPressed()))
+        {
+            // don't allow it to become unpressed
 
-inline void MultiButtonGL::setSelectedButton( int inButtonIndex ) {
-	// simply press the appropriate button, and let the
-	// action handlers do the rest
-	
-	mButtons[ inButtonIndex ]->setPressed( true );
-	}
+            // re-press it, ignoring the resulting event
+            mIgnoreEvents = true;
+            mButtons[mSelectedIndex]->setPressed(true);
+            mIgnoreEvents = false;
 
+            // don't fire an action, since our state
+            // has not changed
+        }
+    }
+}
 
+inline int MultiButtonGL::buttonToIndex(StickyButtonGL *inButton)
+{
+    for (int i = 0; i < mNumButtons; i++)
+    {
+        if (mButtons[i] == inButton)
+        {
+            return i;
+        }
+    }
 
-inline int MultiButtonGL::getSelectedButton() {
-	return mSelectedIndex;
-	}
-
-
-
-inline void MultiButtonGL::actionPerformed( GUIComponent *inTarget ) {
-	if( !mIgnoreEvents ) {
-		int buttonIndex = buttonToIndex( (StickyButtonGL*)inTarget );
-
-		// if another button is being pressed
-		if( buttonIndex != mSelectedIndex
-			&& mButtons[ buttonIndex ]->isPressed() ) {
-
-		
-			// unpress the old button, ignoring the resulting event
-			mIgnoreEvents = true;
-			mButtons[ mSelectedIndex ]->setPressed( false );
-			mIgnoreEvents = false;
-			
-			mSelectedIndex = buttonIndex;
-			
-			fireActionPerformed( this );
-			}
-		// else if our selected button is being unpressed
-		else if( buttonIndex == mSelectedIndex
-				 && !( mButtons[ buttonIndex ]->isPressed() ) ) {
-			// don't allow it to become unpressed
-
-			// re-press it, ignoring the resulting event
-			mIgnoreEvents = true;
-			mButtons[ mSelectedIndex ]->setPressed( true );
-			mIgnoreEvents = false;
-
-			// don't fire an action, since our state
-			// has not changed
-			}
-		}
-	}
-
-
-
-inline int MultiButtonGL::buttonToIndex( StickyButtonGL *inButton ) {
-	for( int i=0; i<mNumButtons; i++ ) {
-		if( mButtons[i] == inButton ) {
-			return i;
-			}
-		}
-	
-	// return the first button index by default
-	printf( "MultiButtonGL:  no matching button found.\n" );
-	return 0;
-	}
-
-
+    // return the first button index by default
+    printf("MultiButtonGL:  no matching button found.\n");
+    return 0;
+}
 
 #endif

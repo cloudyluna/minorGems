@@ -16,7 +16,7 @@
  *
  * 2002-August-5   Jason Rohrer
  * Added another error message.
- * Changed so PageGenerator is responsible for detecting .. parent 
+ * Changed so PageGenerator is responsible for detecting .. parent
  * directory symbols.
  *
  * 2002-August-7   Jason Rohrer
@@ -36,32 +36,22 @@
  * Moved into minorGems.
  */
 
-
-
 #include "RequestHandlingThread.h"
 
+RequestHandlingThread::RequestHandlingThread(Socket *inSocket, PageGenerator *inGenerator,
+                                             ConnectionPermissionHandler *inConnectionPermissionHandler)
+    : mSocket(inSocket), mGenerator(inGenerator), mConnectionPermissionHandler(inConnectionPermissionHandler),
+      mDoneLock(new MutexLock()), mDone(false)
+{
+}
 
-
-
-RequestHandlingThread::RequestHandlingThread(
-    Socket *inSocket, PageGenerator *inGenerator,
-    ConnectionPermissionHandler *inConnectionPermissionHandler )
-    : mSocket( inSocket ),
-      mGenerator( inGenerator ),
-      mConnectionPermissionHandler( inConnectionPermissionHandler ),
-      mDoneLock( new MutexLock() ), mDone( false ) {
-
-    }
-
-
-
-RequestHandlingThread::~RequestHandlingThread() {
+RequestHandlingThread::~RequestHandlingThread()
+{
     delete mDoneLock;
-    }
+}
 
-
-
-char RequestHandlingThread::isDone() {
+char RequestHandlingThread::isDone()
+{
     char tempDone;
 
     mDoneLock->lock();
@@ -69,261 +59,262 @@ char RequestHandlingThread::isDone() {
     mDoneLock->unlock();
 
     return tempDone;
-    }
+}
 
+// example HTTP request and response
+/*
+  GET /images/title_homepage4.gif HTTP/1.0
 
+  HTTP/1.0 200 OK
+  Date: Fri, 11 May 2001 18:05:08 GMT
+  Server: GWS/1.10
+  Connection: close
+  Expires: Sun, 17 Jan 2038 19:14:07 GMT
+  Content-Length: 7963
+  Content-Type: image/gif
+  Last-Modified: Tue, 21 Nov 2000 16:20:07 GMT
 
-    // example HTTP request and response
-    /*
-      GET /images/title_homepage4.gif HTTP/1.0
+  GIF89a1s
+*/
 
-      HTTP/1.0 200 OK
-      Date: Fri, 11 May 2001 18:05:08 GMT
-      Server: GWS/1.10
-      Connection: close
-      Expires: Sun, 17 Jan 2038 19:14:07 GMT
-      Content-Length: 7963
-      Content-Type: image/gif
-      Last-Modified: Tue, 21 Nov 2000 16:20:07 GMT
-      
-      GIF89a1s
-    */
-
-
-void RequestHandlingThread::run() {
+void RequestHandlingThread::run()
+{
 
     HostAddress *receivedAddress = mSocket->getRemoteHostAddress();
 
-    if( receivedAddress == NULL ) {
-        
-        printf( "Failed to obtain host address, so "
-                "refusing web connection.\n" );
-        
+    if (receivedAddress == NULL)
+    {
+
+        printf("Failed to obtain host address, so "
+               "refusing web connection.\n");
+
         // refuse
         delete mSocket;
 
-        
         // flag that we're done
         mDoneLock->lock();
         mDone = true;
         mDoneLock->unlock();
 
         return;
-        }
-    else if(
-        ! mConnectionPermissionHandler->isPermitted( receivedAddress ) ) { 
+    }
+    else if (!mConnectionPermissionHandler->isPermitted(receivedAddress))
+    {
 
-        printf( "Refusing web connection from:  " );
+        printf("Refusing web connection from:  ");
         receivedAddress->print();
-        printf( "\n" );
+        printf("\n");
 
-        
         // not permitted
         delete mSocket;
 
         delete receivedAddress;
-        
+
         // flag that we're done
         mDoneLock->lock();
         mDone = true;
         mDoneLock->unlock();
 
         return;
-        }
-    
+    }
+
     // else permitted
     delete receivedAddress;
-    
 
     int maxLength = 5000;
-    
-    
-    // first, receive the request and parse it
-    
 
-    SocketStream *sockStream = new SocketStream( mSocket );
+    // first, receive the request and parse it
+
+    SocketStream *sockStream = new SocketStream(mSocket);
 
     int requestBufferLength = maxLength;
     char *requestBuffer = new char[requestBufferLength];
     int requestBufferIndex = 0;
-        
+
     // read until we see two \r\n 's in a row
     unsigned char *charRead = new unsigned char[1];
     charRead[0] = 0;
     char requestDone = false;
 
     char error = false;
-    
+
     // _we_ actually only care about the first line of
     // the request, but we need to read the entire request
     // to make the other host happy
     char firstLineDone = false;
     int numRead = 0;
 
-    while( !requestDone && !error ) {
-        while( charRead[0] != 13 && !error ) {
-            numRead = sockStream->read( charRead, 1 );
-                            
-            if( !firstLineDone ) {
-                if( numRead != 1 ) {
+    while (!requestDone && !error)
+    {
+        while (charRead[0] != 13 && !error)
+        {
+            numRead = sockStream->read(charRead, 1);
+
+            if (!firstLineDone)
+            {
+                if (numRead != 1)
+                {
                     error = true;
-                    sendBadRequest( sockStream );
-                    }
+                    sendBadRequest(sockStream);
+                }
                 // read data into our buffer
-                else if( requestBufferIndex < requestBufferLength ) {
-                    requestBuffer[ requestBufferIndex ] =
-                        charRead[0];
+                else if (requestBufferIndex < requestBufferLength)
+                {
+                    requestBuffer[requestBufferIndex] = charRead[0];
                     requestBufferIndex++;
 
-                    if( charRead[0] == 13 ) {
+                    if (charRead[0] == 13)
+                    {
                         firstLineDone = true;
-                        }
-                    }
-                else {
-                    error = true;
-                    sendBadRequest( sockStream );
                     }
                 }
+                else
+                {
+                    error = true;
+                    sendBadRequest(sockStream);
+                }
             }
-        if( !error ) {
+        }
+        if (!error)
+        {
             // look for rest of double \r\n
             // this will effectively skip other lines in the request,
             // since we don't care about them
-            numRead = sockStream->read( charRead, 1 );
+            numRead = sockStream->read(charRead, 1);
 
-            if( charRead[0] == 10 && numRead == 1 ) {
+            if (charRead[0] == 10 && numRead == 1)
+            {
 
-                numRead = sockStream->read( charRead, 1 );
-                if( charRead[0] == 13 && numRead == 1  ) {
+                numRead = sockStream->read(charRead, 1);
+                if (charRead[0] == 13 && numRead == 1)
+                {
 
-                    numRead = sockStream->read( charRead, 1 );
-                    if( charRead[0] == 10 && numRead == 1 ) {
+                    numRead = sockStream->read(charRead, 1);
+                    if (charRead[0] == 10 && numRead == 1)
+                    {
                         requestDone = true;
-                        }
                     }
                 }
+            }
 
-            if( numRead != 1 ) {
+            if (numRead != 1)
+            {
                 error = true;
-                sendBadRequest( sockStream );
-                }
+                sendBadRequest(sockStream);
             }
         }
+    }
 
     // \0 terminate the request buffer
-    if( requestBufferIndex < requestBufferLength ) {
-        requestBuffer[ requestBufferIndex ] = '\0';
-        }
-    else {
-        requestBuffer[ requestBufferLength - 1 ] = '\0';
-        }
-    
-    if( !error ) {
+    if (requestBufferIndex < requestBufferLength)
+    {
+        requestBuffer[requestBufferIndex] = '\0';
+    }
+    else
+    {
+        requestBuffer[requestBufferLength - 1] = '\0';
+    }
+
+    if (!error)
+    {
         // at this point, we have received the entire
         // request, and stored the most important part in
         // requestBuffer
 
-
         // if maxLength = 500,
         // formatString = "%499s"
-        // used to limit length of scanned string 
-        char *formatString = new char[ 20 ];
-        sprintf( formatString, "%%%ds", maxLength - 1 );
-        
-        
+        // used to limit length of scanned string
+        char *formatString = new char[20];
+        sprintf(formatString, "%%%ds", maxLength - 1);
+
         // the second string scanned from the buffer should
         // be the file path requested
-        
-        char *filePathBuffer = new char[ maxLength ];
-        int numRead = sscanf( requestBuffer, formatString, filePathBuffer );
 
-        if( numRead != 1 || strcmp( filePathBuffer, "GET" ) != 0 ) {
+        char *filePathBuffer = new char[maxLength];
+        int numRead = sscanf(requestBuffer, formatString, filePathBuffer);
+
+        if (numRead != 1 || strcmp(filePathBuffer, "GET") != 0)
+        {
             // an invalid request
             error = true;
-            sendBadRequest( sockStream );
-            }
-        else {
+            sendBadRequest(sockStream);
+        }
+        else
+        {
             // a proper GET request
 
             // skip the GET and read the file name
-            numRead = sscanf( &( requestBuffer[3] ),
-                              formatString, filePathBuffer );
-        
-            if( numRead != 1 ) {
+            numRead = sscanf(&(requestBuffer[3]), formatString, filePathBuffer);
+
+            if (numRead != 1)
+            {
                 error = true;
-                sendBadRequest( sockStream );
-                }
+                sendBadRequest(sockStream);
             }
-        
-        delete [] requestBuffer;
-        delete [] charRead;
+        }
 
+        delete[] requestBuffer;
+        delete[] charRead;
 
-        delete [] formatString;
-        
-        if( !error ) {
+        delete[] formatString;
+
+        if (!error)
+        {
             // now we have the requested file string
-            sockStream->writeString(
-                "HTTP/1.0 200 OK\r\n" );
+            sockStream->writeString("HTTP/1.0 200 OK\r\n");
 
-            
-            int cacheSeconds = mGenerator->getCacheMaxAge( filePathBuffer );
-            
-            if( cacheSeconds == 0 ) {
-                sockStream->writeString( "cache-control: no-cache\r\n" );
-                }
-            else {
-                char *cacheString = autoSprintf( 
-                    "cache-control: private, max-age=%d\r\n",
-                    cacheSeconds );
-                
-                sockStream->writeString( cacheString );
-                
-                delete [] cacheString;
-                }
-            
+            int cacheSeconds = mGenerator->getCacheMaxAge(filePathBuffer);
 
-            char *mimeType = mGenerator->getMimeType( filePathBuffer );
+            if (cacheSeconds == 0)
+            {
+                sockStream->writeString("cache-control: no-cache\r\n");
+            }
+            else
+            {
+                char *cacheString = autoSprintf("cache-control: private, max-age=%d\r\n", cacheSeconds);
 
-            sockStream->writeString( "Content-Type: " );
-            sockStream->writeString( mimeType );
-            sockStream->writeString( "\r\n" );
-            
-            delete [] mimeType;
+                sockStream->writeString(cacheString);
+
+                delete[] cacheString;
+            }
+
+            char *mimeType = mGenerator->getMimeType(filePathBuffer);
+
+            sockStream->writeString("Content-Type: ");
+            sockStream->writeString(mimeType);
+            sockStream->writeString("\r\n");
+
+            delete[] mimeType;
 
             // even if the client requests a keep-alive, we force a close
-            sockStream->writeString( "Connection: close" );
-            
+            sockStream->writeString("Connection: close");
+
             // finish header
-            sockStream->writeString( "\r\n\r\n" );
-            
+            sockStream->writeString("\r\n\r\n");
+
             // pass it to our page generator, which will send the content
-            mGenerator->generatePage( filePathBuffer, sockStream );
-            }
-
-        delete [] filePathBuffer;  
-        }
-    else {
-        delete [] requestBuffer;
-        delete [] charRead;
+            mGenerator->generatePage(filePathBuffer, sockStream);
         }
 
-    
+        delete[] filePathBuffer;
+    }
+    else
+    {
+        delete[] requestBuffer;
+        delete[] charRead;
+    }
+
     delete sockStream;
     delete mSocket;
 
-    
     // flag that we're done
     mDoneLock->lock();
     mDone = true;
     mDoneLock->unlock();
-    }
+}
 
-
-
-void RequestHandlingThread::sendNotFoundPage(
-    SocketStream *inStream,
-    char *inFileName ) {
+void RequestHandlingThread::sendNotFoundPage(SocketStream *inStream, char *inFileName)
+{
 
     // example "not found" response
     /*
@@ -343,29 +334,28 @@ void RequestHandlingThread::sendNotFoundPage(
     */
     char *buffer = new char[500];
 
-    if( inFileName != NULL ) {
-        sprintf( buffer,
-                 "HTTP/1.0 404 Not Found\r\n\r\n<HTML>"
-                 "<BODY><H1>404 Not Found</H1>The requested file "
-                 "<b>%s</b> was not found</BODY></HTML>\r\n",
-                 inFileName );
-        }
-    else {
-        sprintf( buffer,
-                 "HTTP/1.0 404 Not Found\r\n\r\n<HTML>"
-                 "<BODY><H1>404 Not Found</H1>The requested "
-                 "file was not found</BODY></HTML>\r\n" );
-        }
-
-    inStream->write( (unsigned char *)buffer, strlen( buffer ) );
-
-    delete [] buffer;
+    if (inFileName != NULL)
+    {
+        sprintf(buffer,
+                "HTTP/1.0 404 Not Found\r\n\r\n<HTML>"
+                "<BODY><H1>404 Not Found</H1>The requested file "
+                "<b>%s</b> was not found</BODY></HTML>\r\n",
+                inFileName);
+    }
+    else
+    {
+        sprintf(buffer, "HTTP/1.0 404 Not Found\r\n\r\n<HTML>"
+                        "<BODY><H1>404 Not Found</H1>The requested "
+                        "file was not found</BODY></HTML>\r\n");
     }
 
+    inStream->write((unsigned char *)buffer, strlen(buffer));
 
+    delete[] buffer;
+}
 
-void RequestHandlingThread::sendBadRequest(
-    SocketStream *inStream ) {
+void RequestHandlingThread::sendBadRequest(SocketStream *inStream)
+{
 
     // exampl "bad request" response
     /*
@@ -377,35 +367,30 @@ void RequestHandlingThread::sendBadRequest(
 
     char *buffer = new char[500];
 
-    sprintf( buffer,
-             "<HTML><BODY><H1>400 Bad Request</H1>"
-             "Your client has issued a malformed or illegal request."
-             "</BODY></HTML>\r\n" );
+    sprintf(buffer, "<HTML><BODY><H1>400 Bad Request</H1>"
+                    "Your client has issued a malformed or illegal request."
+                    "</BODY></HTML>\r\n");
 
-    inStream->write( (unsigned char *)buffer, strlen( buffer ) );
+    inStream->write((unsigned char *)buffer, strlen(buffer));
 
-    delete [] buffer;
-    }
+    delete[] buffer;
+}
 
-
-
-char* RequestHandlingThread::getTimestamp() {
+char *RequestHandlingThread::getTimestamp()
+{
     char *stampBuffer = new char[99];
 
-    time_t t = time( NULL );
-    
-    char *asciiTime = ctime( &t );
+    time_t t = time(NULL);
+
+    char *asciiTime = ctime(&t);
 
     // this time string ends with a newline...
     // get rid of it
-    asciiTime[ strlen(asciiTime) - 1 ] = '\0';
-    
-    
-    sprintf( stampBuffer, "[%s]", asciiTime );
+    asciiTime[strlen(asciiTime) - 1] = '\0';
+
+    sprintf(stampBuffer, "[%s]", asciiTime);
 
     // delete [] asciiTime;
-    
+
     return stampBuffer;
-    }
-
-
+}

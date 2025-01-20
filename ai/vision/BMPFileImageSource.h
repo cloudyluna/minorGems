@@ -5,15 +5,13 @@
  * Created.
  * Finished implementation.
  */
- 
- 
+
 #ifndef BMP_FILE_IMAGE_SOURCE_INCLUDED
-#define BMP_FILE_IMAGE_SOURCE_INCLUDED 
+#define BMP_FILE_IMAGE_SOURCE_INCLUDED
 
-
+#include "minorGems/graphics/converters/BMPImageConverter.h"
 #include "minorGems/io/file/File.h"
 #include "minorGems/io/file/FileInputStream.h"
-#include "minorGems/graphics/converters/BMPImageConverter.h"
 
 #include "ImageSource.h"
 
@@ -23,68 +21,49 @@
  *
  * @author Jason Rohrer
  */
-class BMPFileImageSource : public ImageSource {
-	
-	public:
+class BMPFileImageSource : public ImageSource
+{
 
-		/**
-		 * Constructs a BMPFileImageSource.
-		 *
-		 * @param inFile the file to read the BMP information from.
-		 *   Is destroyed when this class is destroyed.
-		 */
-		BMPFileImageSource( File *inFile );
+  public:
+    /**
+     * Constructs a BMPFileImageSource.
+     *
+     * @param inFile the file to read the BMP information from.
+     *   Is destroyed when this class is destroyed.
+     */
+    BMPFileImageSource(File *inFile);
 
+    ~BMPFileImageSource();
 
-		~BMPFileImageSource();
-		
-		
-		// implements ImageSource interface
-		virtual Image *getNextImage();
+    // implements ImageSource interface
+    virtual Image *getNextImage();
 
+  private:
+    File *mFile;
+    BMPImageConverter *mConverter;
+};
 
-		
-	private:
-		File *mFile;
-		BMPImageConverter *mConverter;
-		
-	};
+inline BMPFileImageSource::BMPFileImageSource(File *inFile) : mFile(inFile), mConverter(new BMPImageConverter)
+{
+}
 
+inline BMPFileImageSource::~BMPFileImageSource()
+{
+    delete mFile;
+    delete mConverter;
+}
 
+inline Image *BMPFileImageSource::getNextImage()
+{
 
-inline BMPFileImageSource::BMPFileImageSource( File *inFile )
-	: mFile( inFile ), mConverter( new BMPImageConverter ) {
-	
-	}
+    FileInputStream *fileStream = new FileInputStream(mFile);
 
+    Image *returnImage = mConverter->deformatImage(fileStream);
 
+    // deleting file stream does not delete file
+    delete fileStream;
 
-inline BMPFileImageSource::~BMPFileImageSource() {
-	delete mFile;
-	delete mConverter;
-	}
-
-
-
-inline Image *BMPFileImageSource::getNextImage() {
-
-	FileInputStream *fileStream = new FileInputStream( mFile );
-
-	Image *returnImage = mConverter->deformatImage( fileStream );
-
-	// deleting file stream does not delete file
-	delete fileStream;
-
-	return returnImage;
-	}
-
-
+    return returnImage;
+}
 
 #endif
-
-
-
-
-
-
-

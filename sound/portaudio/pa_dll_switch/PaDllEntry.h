@@ -38,7 +38,8 @@
 #define __PADLLENTRY_HEADER_INCLUDED__
 
 typedef int PaError;
-typedef enum {
+typedef enum
+{
     paNoError = 0,
 
     paHostError = -10000,
@@ -58,15 +59,14 @@ typedef enum {
 } PaErrorNum;
 
 typedef unsigned long PaSampleFormat;
-#define paFloat32      ((PaSampleFormat) (1<<0)) /*always available*/
-#define paInt16        ((PaSampleFormat) (1<<1)) /*always available*/
-#define paInt32        ((PaSampleFormat) (1<<2)) /*always available*/
-#define paInt24        ((PaSampleFormat) (1<<3))
-#define paPackedInt24  ((PaSampleFormat) (1<<4))
-#define paInt8         ((PaSampleFormat) (1<<5))
-#define paUInt8        ((PaSampleFormat) (1<<6))    /* unsigned 8 bit, 128 is "ground" */
-#define paCustomFormat ((PaSampleFormat) (1<<16))
-
+#define paFloat32 ((PaSampleFormat)(1 << 0)) /*always available*/
+#define paInt16 ((PaSampleFormat)(1 << 1))   /*always available*/
+#define paInt32 ((PaSampleFormat)(1 << 2))   /*always available*/
+#define paInt24 ((PaSampleFormat)(1 << 3))
+#define paPackedInt24 ((PaSampleFormat)(1 << 4))
+#define paInt8 ((PaSampleFormat)(1 << 5))
+#define paUInt8 ((PaSampleFormat)(1 << 6)) /* unsigned 8 bit, 128 is "ground" */
+#define paCustomFormat ((PaSampleFormat)(1 << 16))
 
 typedef int PaDeviceID;
 #define paNoDevice -1
@@ -82,103 +82,65 @@ typedef struct
     /* Array of supported sample rates, or {min,max} if range supported. */
     const double *sampleRates;
     PaSampleFormat nativeSampleFormats;
-}
-PaDeviceInfo;
-
+} PaDeviceInfo;
 
 typedef double PaTimestamp;
 
+typedef int(PortAudioCallback)(void *inputBuffer, void *outputBuffer, unsigned long framesPerBuffer,
+                               PaTimestamp outTime, void *userData);
 
-typedef int (PortAudioCallback)(
-    void *inputBuffer, void *outputBuffer,
-    unsigned long framesPerBuffer,
-    PaTimestamp outTime, void *userData );
-
-
-#define   paNoFlag      (0)
-#define   paClipOff     (1<<0)   /* disable default clipping of out of range samples */
-#define   paDitherOff   (1<<1)   /* disable default dithering */
-#define   paPlatformSpecificFlags (0x00010000)
-typedef   unsigned long PaStreamFlags;
+#define paNoFlag (0)
+#define paClipOff (1 << 0)   /* disable default clipping of out of range samples */
+#define paDitherOff (1 << 1) /* disable default dithering */
+#define paPlatformSpecificFlags (0x00010000)
+typedef unsigned long PaStreamFlags;
 
 typedef void PortAudioStream;
 #define PaStream PortAudioStream
 
-extern  PaError (__cdecl* Pa_Initialize)( void );
+extern PaError(__cdecl *Pa_Initialize)(void);
 
+extern PaError(__cdecl *Pa_Terminate)(void);
 
+extern long(__cdecl *Pa_GetHostError)(void);
 
-extern  PaError (__cdecl* Pa_Terminate)( void );
+extern const char *(__cdecl *Pa_GetErrorText)(PaError);
 
+extern int(__cdecl *Pa_CountDevices)(void);
 
-extern  long (__cdecl* Pa_GetHostError)( void );
+extern PaDeviceID(__cdecl *Pa_GetDefaultInputDeviceID)(void);
 
+extern PaDeviceID(__cdecl *Pa_GetDefaultOutputDeviceID)(void);
 
-extern  const char* (__cdecl* Pa_GetErrorText)( PaError );
+extern const PaDeviceInfo *(__cdecl *Pa_GetDeviceInfo)(PaDeviceID);
 
+extern PaError(__cdecl *Pa_OpenStream)(PortAudioStream **, PaDeviceID, int, PaSampleFormat, void *, PaDeviceID, int,
+                                       PaSampleFormat, void *, double, unsigned long, unsigned long, unsigned long,
+                                       PortAudioCallback *, void *);
 
+extern PaError(__cdecl *Pa_OpenDefaultStream)(PortAudioStream **stream, int numInputChannels, int numOutputChannels,
+                                              PaSampleFormat sampleFormat, double sampleRate,
+                                              unsigned long framesPerBuffer, unsigned long numberOfBuffers,
+                                              PortAudioCallback *callback, void *userData);
 
-extern  int (__cdecl* Pa_CountDevices)(void);
+extern PaError(__cdecl *Pa_CloseStream)(PortAudioStream *);
 
-extern  PaDeviceID (__cdecl* Pa_GetDefaultInputDeviceID)( void );
+extern PaError(__cdecl *Pa_StartStream)(PortAudioStream *stream);
 
-extern  PaDeviceID (__cdecl* Pa_GetDefaultOutputDeviceID)( void );
+extern PaError(__cdecl *Pa_StopStream)(PortAudioStream *stream);
 
+extern PaError(__cdecl *Pa_AbortStream)(PortAudioStream *stream);
 
-extern  const PaDeviceInfo* (__cdecl* Pa_GetDeviceInfo)( PaDeviceID);
+extern PaError(__cdecl *Pa_StreamActive)(PortAudioStream *stream);
 
+extern PaTimestamp(__cdecl *Pa_StreamTime)(PortAudioStream *stream);
 
+extern double(__cdecl *Pa_GetCPULoad)(PortAudioStream *stream);
 
-extern  PaError (__cdecl* Pa_OpenStream)(
-        PortAudioStream ** ,
-        PaDeviceID ,
-        int ,
-        PaSampleFormat ,
-        void *,
-        PaDeviceID ,
-        int ,
-        PaSampleFormat ,
-        void *,
-        double ,
-        unsigned long ,
-        unsigned long ,
-        unsigned long ,
-        PortAudioCallback *,
-        void * );
+extern int(__cdecl *Pa_GetMinNumBuffers)(int framesPerBuffer, double sampleRate);
 
+extern void(__cdecl *Pa_Sleep)(long msec);
 
-
-extern  PaError (__cdecl* Pa_OpenDefaultStream)( PortAudioStream** stream,
-            int numInputChannels,
-            int numOutputChannels,
-            PaSampleFormat sampleFormat,
-            double sampleRate,
-            unsigned long framesPerBuffer,
-            unsigned long numberOfBuffers,
-            PortAudioCallback *callback,
-            void *userData );
-
-
-extern  PaError (__cdecl* Pa_CloseStream)( PortAudioStream* );
-
-
-extern  PaError (__cdecl* Pa_StartStream)( PortAudioStream *stream );
-
-extern  PaError (__cdecl* Pa_StopStream)( PortAudioStream *stream );
-
-extern  PaError (__cdecl* Pa_AbortStream)( PortAudioStream *stream );
-
-extern  PaError (__cdecl* Pa_StreamActive)( PortAudioStream *stream );
-
-extern  PaTimestamp (__cdecl* Pa_StreamTime)( PortAudioStream *stream );
-
-extern  double (__cdecl* Pa_GetCPULoad)( PortAudioStream* stream );
-
-extern  int (__cdecl* Pa_GetMinNumBuffers)( int framesPerBuffer, double sampleRate );
-
-extern  void (__cdecl* Pa_Sleep)( long msec );
-
-extern  PaError (__cdecl* Pa_GetSampleSize)( PaSampleFormat format );
+extern PaError(__cdecl *Pa_GetSampleSize)(PaSampleFormat format);
 
 #endif // __PADLLENTRY_HEADER_INCLUDED__
-

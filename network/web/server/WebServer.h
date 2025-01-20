@@ -17,14 +17,11 @@
  * Moved into minorGems.
  */
 
-
- 
 #ifndef WEB_SERVER_INCLUDED
-#define WEB_SERVER_INCLUDED 
+#define WEB_SERVER_INCLUDED
 
-
-#include "PageGenerator.h"
 #include "ConnectionPermissionHandler.h"
+#include "PageGenerator.h"
 
 #include "minorGems/network/Socket.h"
 #include "minorGems/network/SocketServer.h"
@@ -35,61 +32,44 @@
 
 #include "minorGems/system/StopSignalThread.h"
 
-
-
-#include <string.h>
 #include <stdio.h>
-
+#include <string.h>
 
 /**
  * A class that implements a basic web server.
  *
  * @author Jason Rohrer.
  */
-class WebServer : public StopSignalThread {
+class WebServer : public StopSignalThread
+{
 
+  public:
+    /**
+     * Constructs an starts this server.
+     *
+     * @param inPort the port to listen on.
+     * @param inGenerator the class to use for generating pages.
+     *   Will be destroyed when this class is destroyed.
+     */
+    WebServer(int inPort, PageGenerator *inGenerator);
 
+    /**
+     * Stops and destroys this server.
+     */
+    ~WebServer();
 
-    public:
+    // implements the Thread::run() interface
+    void run();
 
+  private:
+    int mPortNumber;
+    int mMaxQueuedConnections;
 
-        
-        /**
-         * Constructs an starts this server.
-         *
-         * @param inPort the port to listen on.
-         * @param inGenerator the class to use for generating pages.
-         *   Will be destroyed when this class is destroyed.
-         */
-        WebServer( int inPort, PageGenerator *inGenerator );
+    SocketServer *mServer;
+    ThreadHandlingThread *mThreadHandler;
 
-
-
-        /**
-         * Stops and destroys this server.
-         */
-        ~WebServer();
-
-
-        
-        // implements the Thread::run() interface
-        void run();
-
-        
-        
-    private:
-
-        int mPortNumber;
-        int mMaxQueuedConnections;
-
-        SocketServer *mServer;
-        ThreadHandlingThread *mThreadHandler;
-
-        PageGenerator *mPageGenerator;
-        ConnectionPermissionHandler *mConnectionPermissionHandler;
-    };
-
-
-
+    PageGenerator *mPageGenerator;
+    ConnectionPermissionHandler *mConnectionPermissionHandler;
+};
 
 #endif

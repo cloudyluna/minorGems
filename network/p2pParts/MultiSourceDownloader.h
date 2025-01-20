@@ -8,12 +8,8 @@
  * Fixed compile errors caused by multiple definitions.
  */
 
-
-
 #ifndef MULTISOURCE_DOWNLOADER_INCLUDED
 #define MULTISOURCE_DOWNLOADER_INCLUDED
-
-
 
 /**
  * Abstract API for multi-source downloads.
@@ -21,13 +17,9 @@
  * @author Jason Rohrer.
  */
 
-
-
 extern int MULTISOURCE_DOWNLOAD_IN_PROGRESS;
 extern int MULTISOURCE_DOWNLOAD_FAILED;
 extern int MULTISOURCE_DOWNLOAD_CANCELED;
-
-
 
 /**
  * Gets a file from multiple sources.
@@ -64,21 +56,10 @@ extern int MULTISOURCE_DOWNLOAD_CANCELED;
  * @param inDestinationPath the path to save the file to.
  *   Must be destroyed by caller.
  */
-void multiSourceGetFile( void *inFileDescriptor,
-                         unsigned long inFileSize,
-                         unsigned long inChunkSize,
-                         int inNumSources,
-                         void **inFileSources,
-                         unsigned char * (*inChunkGetter)(
-                             void *, void *, unsigned long, unsigned long ),
-                         char (*inDownloadProgressHandler)(
-                             int, unsigned long, void * ),
-                         void *inProgressHandlerExtraArgument,
-                         char *inDestinationPath );
-
-
+void multiSourceGetFile(void *inFileDescriptor, unsigned long inFileSize, unsigned long inChunkSize, int inNumSources,
+                        void **inFileSources,
+                        unsigned char *(*inChunkGetter)(void *, void *, unsigned long, unsigned long),
+                        char (*inDownloadProgressHandler)(int, unsigned long, void *),
+                        void *inProgressHandlerExtraArgument, char *inDestinationPath);
 
 #endif
-
-
-

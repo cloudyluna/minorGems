@@ -3,17 +3,13 @@
 
 #include <limits.h>
 
+enum MinOrMax
+{
+    min,
+    max
+};
 
-enum MinOrMax {
-	min,
-    max };
-
-
-
-GameState *minMaxPickMove( GameState *inCurrentState, MinOrMax inSide,
-                           int inDepthLimit = -1 );
-
-
+GameState *minMaxPickMove(GameState *inCurrentState, MinOrMax inSide, int inDepthLimit = -1);
 
 // performs minMax search from inCurrentState and returns
 // minMax score for inCurrentState
@@ -23,8 +19,4 @@ GameState *minMaxPickMove( GameState *inCurrentState, MinOrMax inSide,
 //
 // inMin and inMax are used internally, in recursive self-calls,
 // for alpha-beta pruning
-int minMax( GameState *inCurrentState, MinOrMax inSide,
-            int inDepthLimit = -1, 
-            int inMin = INT_MIN,
-            int inMax = INT_MAX );
-
+int minMax(GameState *inCurrentState, MinOrMax inSide, int inDepthLimit = -1, int inMin = INT_MIN, int inMax = INT_MAX);

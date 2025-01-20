@@ -4,88 +4,78 @@
  * 2001-May-14   Jason Rohrer
  * Created.
  */
- 
- 
-#ifndef IMAGE_UTILITIES_INCLUDED
-#define IMAGE_UTILITIES_INCLUDED 
 
+#ifndef IMAGE_UTILITIES_INCLUDED
+#define IMAGE_UTILITIES_INCLUDED
 
 #include "minorGems/graphics/Image.h"
 #include "minorGems/graphics/ImageColorConverter.h"
+#include "minorGems/graphics/converters/BMPImageConverter.h"
 #include "minorGems/io/file/File.h"
 #include "minorGems/io/file/FileOutputStream.h"
-#include "minorGems/graphics/converters/BMPImageConverter.h"
 
 /**
  * Container class for static image utility functions.
  *
  * @author Jason Rohrer
- */ 
-class ImageUtilities {
-	
-	public:
+ */
+class ImageUtilities
+{
 
-		/**
-		 * Outputs an image to file as a 24-bit BMP.  The
-		 * file names are stamped with the current time.
-		 *
-		 * @param inImage the image to output.
-		 *   If the image has 3 channels, it is interpreted
-		 *   as an RGB image.  If the image has 1 channel,
-		 *   it is interpreted as a grayscale image.
-		 * @param inFileNamePrefix the prefix for the
-		 *   name of the output file.  Must be '\0' terminated.
-		 *   Must be destroyed by caller if not const.
-		 *   File names are of the form:  PrefixTimestamp.bmp
-		 */
-		static void imageToBMPFile( Image *inImage,
-									char *inFileNamePrefix );
-									
-				
-	};
+  public:
+    /**
+     * Outputs an image to file as a 24-bit BMP.  The
+     * file names are stamped with the current time.
+     *
+     * @param inImage the image to output.
+     *   If the image has 3 channels, it is interpreted
+     *   as an RGB image.  If the image has 1 channel,
+     *   it is interpreted as a grayscale image.
+     * @param inFileNamePrefix the prefix for the
+     *   name of the output file.  Must be '\0' terminated.
+     *   Must be destroyed by caller if not const.
+     *   File names are of the form:  PrefixTimestamp.bmp
+     */
+    static void imageToBMPFile(Image *inImage, char *inFileNamePrefix);
+};
 
+inline void ImageUtilities::imageToBMPFile(Image *inImage, char *inFileNamePrefix)
+{
 
+    BMPImageConverter *converter = new BMPImageConverter();
 
-inline void ImageUtilities::imageToBMPFile( Image *inImage,
-											char *inFileNamePrefix ) {
+    char *fileName = new char[100];
 
+    long timeStamp = time(NULL);
 
-	BMPImageConverter *converter = new BMPImageConverter();
+    sprintf(fileName, "%s%d.bmp", inFileNamePrefix, timeStamp);
 
-	char *fileName = new char[100];
+    int nameLength = strlen(fileName);
 
-	long timeStamp = time( NULL );
+    File *outFile = new File(NULL, fileName, nameLength);
+    FileOutputStream *outStream = new FileOutputStream(outFile);
 
-	sprintf( fileName, "%s%d.bmp", inFileNamePrefix, timeStamp );
+    int numChannels = inImage->getNumChannels();
 
-	int nameLength = strlen( fileName );
+    if (numChannels != 3)
+    {
+        Image *threeChannelImage = ImageColorConverter::grayscaleToRGB(inImage);
 
-	File *outFile = new File( NULL, fileName, nameLength );
-	FileOutputStream *outStream = new FileOutputStream( outFile );
+        converter->formatImage(threeChannelImage, outStream);
 
-	int numChannels = inImage->getNumChannels();
+        delete threeChannelImage;
+    }
 
-	
-	if(  numChannels != 3 ) {
-		Image *threeChannelImage =
-			ImageColorConverter::grayscaleToRGB( inImage );
+    else
+    {
+        converter->formatImage(inImage, outStream);
+    }
 
-		converter->formatImage( threeChannelImage, outStream );
+    delete converter;
+    delete[] fileName;
 
-		delete threeChannelImage;
-		}
+    delete outFile;
+    delete outStream;
+}
 
-	else {
-		converter->formatImage( inImage, outStream );
-		}
-
-	delete converter;
-	delete [] fileName;
-
-	delete outFile;
-	delete outStream;
-	}
-
-
-		
 #endif

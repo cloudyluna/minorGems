@@ -18,55 +18,55 @@ static char gStepThresholdSingletonAllocated = false;
 // so make this a global variable too... yuck!
 static Threshold *gStepThresholdSingleton;
 
-
 /**
  * Step function implementation of the threshold interface.
  * Uses the singleton pattern.
  *
- * @author Jason Rohrer 
+ * @author Jason Rohrer
  */
-class StepThreshold : public Threshold {
+class StepThreshold : public Threshold
+{
 
-	public:
-		/**
-		 * Gets the singleton instance of this class.
-		 *
-		 * @return the singleton instance of this class.
-		 */
-		static Threshold *getInstance();
-		
-		/**
-		 * Implements the apply interface with a step function
-		 * that maps values below inThreshold to 0 and all other
-		 * values to 1.
-		 */
-		double apply( double inValue, double inThreshold );	
-	
-	private:
-		static Threshold *mSingleton;
-		static int mInt;
-	}; 
+  public:
+    /**
+     * Gets the singleton instance of this class.
+     *
+     * @return the singleton instance of this class.
+     */
+    static Threshold *getInstance();
 
+    /**
+     * Implements the apply interface with a step function
+     * that maps values below inThreshold to 0 and all other
+     * values to 1.
+     */
+    double apply(double inValue, double inThreshold);
 
+  private:
+    static Threshold *mSingleton;
+    static int mInt;
+};
 
-inline Threshold *StepThreshold::getInstance() {
-	if( !gStepThresholdSingletonAllocated ) {
-		gStepThresholdSingleton = new StepThreshold();
-		gStepThresholdSingletonAllocated = true;
-		}
-	return gStepThresholdSingleton;
-	}
+inline Threshold *StepThreshold::getInstance()
+{
+    if (!gStepThresholdSingletonAllocated)
+    {
+        gStepThresholdSingleton = new StepThreshold();
+        gStepThresholdSingletonAllocated = true;
+    }
+    return gStepThresholdSingleton;
+}
 
-
-	
-inline double StepThreshold::apply( double inValue, double inThreshold ) {
-	if( inValue < inThreshold ) {
-		return 0.0;
-		}
-	else {
-		return 1.0;
-		}
-	}
-
+inline double StepThreshold::apply(double inValue, double inThreshold)
+{
+    if (inValue < inThreshold)
+    {
+        return 0.0;
+    }
+    else
+    {
+        return 1.0;
+    }
+}
 
 #endif

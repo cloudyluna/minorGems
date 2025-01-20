@@ -14,69 +14,46 @@
  * Moved into minorGems.
  */
 
-
- 
 #ifndef CONNECTION_PERMISSION_HANDLER_INCLUDED
-#define CONNECTION_PERMISSION_HANDLER_INCLUDED 
-
-
+#define CONNECTION_PERMISSION_HANDLER_INCLUDED
 
 #include "minorGems/network/HostAddress.h"
 
 #include "minorGems/util/SimpleVector.h"
 
-
-#include <string.h>
 #include <stdio.h>
-
-
+#include <string.h>
 
 /**
  * A class that handles permissions for received connections.
  *
  * @author Jason Rohrer.
  */
-class ConnectionPermissionHandler {
+class ConnectionPermissionHandler
+{
 
+  public:
+    /**
+     * Constructs a handler.
+     */
+    ConnectionPermissionHandler();
 
+    ~ConnectionPermissionHandler();
 
-    public:
+    /**
+     * Gets whether a connection is permitted.
+     *
+     * @param inAddress the address of the host connecting.
+     *   Must be destroyed by caller.
+     *
+     * @return true iff a connection is allowed.
+     */
+    char isPermitted(HostAddress *inAddress);
 
+  private:
+    SimpleVector<HostAddress *> *mPermittedAddresses;
 
-
-        /**
-         * Constructs a handler.
-         */
-        ConnectionPermissionHandler();
-
-
-        ~ConnectionPermissionHandler();
-        
-
-
-        /**
-         * Gets whether a connection is permitted.
-         *
-         * @param inAddress the address of the host connecting.
-         *   Must be destroyed by caller.
-         *
-         * @return true iff a connection is allowed.
-         */
-        char isPermitted( HostAddress *inAddress );
-
-
-        
-    private:
-
-        
-        SimpleVector<HostAddress *> *mPermittedAddresses;
-
-        SimpleVector<char *> *mPermittedPatterns;
-
-        
-    };
-
-
+    SimpleVector<char *> *mPermittedPatterns;
+};
 
 #endif
-

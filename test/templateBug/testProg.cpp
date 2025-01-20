@@ -2,11 +2,12 @@
 #include "myFunctionA.h"
 #include "myFunctionB.h"
 
-int main() {
+int main()
+{
 
     myFunctionA();
-    
+
     myFunctionB();
-    
+
     return 0;
-    }
+}

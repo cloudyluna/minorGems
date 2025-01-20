@@ -11,8 +11,6 @@
 #ifndef PORT_MAPPING_INCLUDED
 #define PORT_MAPPING_INCLUDED
 
-
-
 /**
  * Maps a port on a UPNP Gateway Device (discovers it first).
  *
@@ -25,11 +23,7 @@
  *
  * @return 1 on success.
  */
-int mapPort( int inPort, const char *inDescription,
-             int inTimeoutMS,
-             char **outExternalIP );
-
-
+int mapPort(int inPort, const char *inDescription, int inTimeoutMS, char **outExternalIP);
 
 /**
  * Maps a port on a UPNP Gateway Device (discovers it first).
@@ -39,9 +33,6 @@ int mapPort( int inPort, const char *inDescription,
  *
  * @return 1 on success.
  */
-int unmapPort( int inPort, int inTimeoutMS );
-
-
-
+int unmapPort(int inPort, int inTimeoutMS);
 
 #endif

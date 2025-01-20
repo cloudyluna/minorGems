@@ -31,106 +31,88 @@
 
 #include "minorGems/common.h"
 
-
-
 #ifndef THREAD_CLASS_INCLUDED
 #define THREAD_CLASS_INCLUDED
-
-
-
-
-
 
 /**
  * Base class to be subclassed by all threads.
  *
  * Note:  Implementation for the functions defined here is provided
- *   separately for each platform (in the mac/ linux/ and win32/ 
+ *   separately for each platform (in the mac/ linux/ and win32/
  *   subdirectories).
  *
  * @author Jason Rohrer
- */ 
-class Thread {
+ */
+class Thread
+{
 
-	public:
-	
-		Thread();		
-		virtual ~Thread();
-	
-		
-		/**
-		 * Starts this Thread.
-		 *
-		 * Note that after starting a non-detached thread, it _must_ be
-         * joined before being destroyed to avoid memory leaks.
-         *
-         * Threads running in detatched mode handle their own destruction
-         * as they terminate and do not need to be joined at all.
-         *
-         * @param inDetach true if this thread should run in detatched mode,
-         *   or false to run in non-detached mode.  Defaults to false.    
-		 */
-		void start( char inDetach = false );
-		
-		
-		/**
-		 * To be overriden by subclasses.
-		 * This method will be run by the Thread after start() has been called.
-		 */
-		virtual void run() = 0;
-		
-		
-		/**
-		 * Blocks until this thread finishes executing its run() method.
-		 *
-		 * Must be called before destroying this thread, if this thread
-		 * has been started.
-		 */
-		void join();
+  public:
+    Thread();
+    virtual ~Thread();
 
-		
-		/**
-		 * Puts the current thread to sleep for a specified amount of time.
-		 *
-		 * Note that given a thread instance threadA, calling threadA.sleep()
-		 * will put the calling thread to sleep.
-		 *
-		 * @param inTimeInMilliseconds the number of milliseconds to sleep.
-		 */
-		virtual void sleep( unsigned long inTimeInMilliseconds ) {
-            staticSleep( inTimeInMilliseconds );
-            }
+    /**
+     * Starts this Thread.
+     *
+     * Note that after starting a non-detached thread, it _must_ be
+     * joined before being destroyed to avoid memory leaks.
+     *
+     * Threads running in detatched mode handle their own destruction
+     * as they terminate and do not need to be joined at all.
+     *
+     * @param inDetach true if this thread should run in detatched mode,
+     *   or false to run in non-detached mode.  Defaults to false.
+     */
+    void start(char inDetach = false);
 
+    /**
+     * To be overriden by subclasses.
+     * This method will be run by the Thread after start() has been called.
+     */
+    virtual void run() = 0;
 
-        
-        /**
-         * Same as sleep, but can be called without constructing a thread.
-         */
-        static void staticSleep( unsigned long inTimeInMilliseconds );
+    /**
+     * Blocks until this thread finishes executing its run() method.
+     *
+     * Must be called before destroying this thread, if this thread
+     * has been started.
+     */
+    void join();
 
-        
+    /**
+     * Puts the current thread to sleep for a specified amount of time.
+     *
+     * Note that given a thread instance threadA, calling threadA.sleep()
+     * will put the calling thread to sleep.
+     *
+     * @param inTimeInMilliseconds the number of milliseconds to sleep.
+     */
+    virtual void sleep(unsigned long inTimeInMilliseconds)
+    {
+        staticSleep(inTimeInMilliseconds);
+    }
 
-        /**
-         * Gets whether this thread is detached.
-         *
-         * @return true if this thread is detached.
-         */
-        char isDetatched() {
-            return mIsDetached;
-            }
+    /**
+     * Same as sleep, but can be called without constructing a thread.
+     */
+    static void staticSleep(unsigned long inTimeInMilliseconds);
 
+    /**
+     * Gets whether this thread is detached.
+     *
+     * @return true if this thread is detached.
+     */
+    char isDetatched()
+    {
+        return mIsDetached;
+    }
 
-        
-	private:
-		
-		/**
-		 * Used by platform-specific implementations.
-		 */		
-		void *mNativeObjectPointer;
+  private:
+    /**
+     * Used by platform-specific implementations.
+     */
+    void *mNativeObjectPointer;
 
+    char mIsDetached;
+};
 
-        char mIsDetached;
-		
-	};		
-	
 #endif

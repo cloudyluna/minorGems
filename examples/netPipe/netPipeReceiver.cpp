@@ -2,140 +2,138 @@
  * Modification History
  *
  * 2001-August-02   Jason Rohrer
- * Created.  
+ * Created.
  *
  * 2002-June-1    Jason Rohrer
- * Added a missing include.  
+ * Added a missing include.
  */
 
-#include "minorGems/network/SocketServer.h"
 #include "minorGems/network/Socket.h"
+#include "minorGems/network/SocketServer.h"
 #include "minorGems/network/SocketStream.h"
 
 #include "minorGems/io/file/File.h"
 #include "minorGems/io/file/FileOutputStream.h"
 
-
-#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-
+#include <string.h>
 
 #define BUFFER_SIZE 5000
 
+void usage(char *inAppName);
 
-void usage( char *inAppName );
+int main(char inNumArgs, char **inArgs)
+{
 
+    if (inNumArgs < 2)
+    {
+        usage(inArgs[0]);
+    }
+    if (inNumArgs > 3)
+    {
+        usage(inArgs[0]);
+    }
+    char useFile = true;
+    if (inNumArgs != 3)
+    {
+        useFile = false;
+    }
 
-int main( char inNumArgs, char **inArgs ) {
+    long port;
+    int numRead = sscanf(inArgs[1], "%d", &port);
 
-	if( inNumArgs < 2 ) {
-		usage( inArgs[0] );
-		}
-	if( inNumArgs > 3 ) {
-		usage( inArgs[0] );
-		}
-	char useFile = true;
-	if( inNumArgs != 3 ) {
-		useFile = false;
-		}
+    if (numRead != 1)
+    {
+        printf("port number must be a valid integer:  %s\n", inArgs[2]);
+        usage(inArgs[0]);
+    }
 
-	long port;
-	int numRead = sscanf( inArgs[1], "%d", &port );
+    File *outFile;
+    FileOutputStream *outStream;
 
-	if( numRead != 1 ) {
-		printf( "port number must be a valid integer:  %s\n", inArgs[2] );
-		usage( inArgs[0] );
-		}
+    if (useFile)
+    {
+        outFile = new File(NULL, inArgs[2], strlen(inArgs[2]));
 
-	File *outFile;
-	FileOutputStream *outStream;
+        outStream = new FileOutputStream(outFile);
+    }
 
-	if( useFile ) {
-		outFile = new File( NULL, inArgs[2],
-							strlen( inArgs[2] ) );
-		
-		outStream = new FileOutputStream( outFile );
-		}
-   
-	SocketServer *server = new SocketServer( port, 1 );
-	
-	printf( "listening for a connection on port %d\n", port );
-	Socket *sock = server->acceptConnection();
+    SocketServer *server = new SocketServer(port, 1);
 
-	if( sock == NULL ) {
-		printf( "socket connection failed\n" );
-		return( 1 );
-		}
-	printf( "connection received\n" );
-	
-	
-	SocketStream *inStream = new SocketStream( sock );
+    printf("listening for a connection on port %d\n", port);
+    Socket *sock = server->acceptConnection();
 
-	
-	unsigned long checksum = 0;
+    if (sock == NULL)
+    {
+        printf("socket connection failed\n");
+        return (1);
+    }
+    printf("connection received\n");
 
-	unsigned char *buffer = new unsigned char[ BUFFER_SIZE ];
-	
+    SocketStream *inStream = new SocketStream(sock);
 
-	numRead = BUFFER_SIZE;
-	int numWritten = BUFFER_SIZE;
-	
-	while( numWritten == numRead && numRead == BUFFER_SIZE ) {
+    unsigned long checksum = 0;
 
-		// read a buffer full of data from standard in
-		numRead = inStream->read( buffer, BUFFER_SIZE );
+    unsigned char *buffer = new unsigned char[BUFFER_SIZE];
 
-		// add the buffer to our checksum
-		for( int i=0; i<numRead; i++ ) {
-			checksum += buffer[i];
-			}
+    numRead = BUFFER_SIZE;
+    int numWritten = BUFFER_SIZE;
 
+    while (numWritten == numRead && numRead == BUFFER_SIZE)
+    {
 
-		if( useFile ) {
-			// write the buffer out to our file stream
-			numWritten = outStream->write( buffer, numRead );
-			}
-		else {
-			// write to std out
-			numWritten = fwrite( buffer, 1, numRead, stdout );
-			}
-		}
+        // read a buffer full of data from standard in
+        numRead = inStream->read(buffer, BUFFER_SIZE);
 
-	
+        // add the buffer to our checksum
+        for (int i = 0; i < numRead; i++)
+        {
+            checksum += buffer[i];
+        }
 
-	if( numRead != numWritten ) {
-		printf( "file output failed\n" );
-		}
-	
+        if (useFile)
+        {
+            // write the buffer out to our file stream
+            numWritten = outStream->write(buffer, numRead);
+        }
+        else
+        {
+            // write to std out
+            numWritten = fwrite(buffer, 1, numRead, stdout);
+        }
+    }
 
-	
-	printf( "checksum = %d\n", checksum );
+    if (numRead != numWritten)
+    {
+        printf("file output failed\n");
+    }
 
+    printf("checksum = %d\n", checksum);
 
-	delete sock;
-	delete server;
-	delete inStream;
-	if( useFile ) {
-		delete outStream;
-		delete outFile;
-		}
-	
-	delete [] buffer;
-	
-	return 0;
-	}
+    delete sock;
+    delete server;
+    delete inStream;
+    if (useFile)
+    {
+        delete outStream;
+        delete outFile;
+    }
 
+    delete[] buffer;
 
+    return 0;
+}
 
-void usage( char *inAppName ) {
+void usage(char *inAppName)
+{
 
-	printf( "Usage:\n" );
-	printf( "\t%s receiver_port [output_file_name]\n", inAppName );
+    printf("Usage:\n");
+    printf("\t%s receiver_port [output_file_name]\n", inAppName);
 
-	printf( "Examples:\n" );
-	printf( "\t%s 5888 myarchive.tar\n", inAppName );
-	printf( "\t%s 5888 \n", inAppName );
-	
-	exit( 1 );
-	}
+    printf("Examples:\n");
+    printf("\t%s 5888 myarchive.tar\n", inAppName);
+    printf("\t%s 5888 \n", inAppName);
+
+    exit(1);
+}

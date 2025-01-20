@@ -5,54 +5,44 @@
  * Created.
  */
 
-
-
 #include "SocketManager.h"
-
-
 
 // static initialization
 SocketManagerDataWrapper SocketManager::mDataWrapper;
 
-
-
 SocketManagerDataWrapper::SocketManagerDataWrapper()
-    : mLock( new MutexLock() ),
-      mSocketVector( new SimpleVector<Socket *>() ) {
+    : mLock(new MutexLock()), mSocketVector(new SimpleVector<Socket *>())
+{
+}
 
-    }
-
-
-
-SocketManagerDataWrapper::~SocketManagerDataWrapper() {
+SocketManagerDataWrapper::~SocketManagerDataWrapper()
+{
     int numSockets = mSocketVector->size();
 
-    for( int i=0; i<numSockets; i++ ) {
-        delete *( mSocketVector->getElement( i ) );
-        }
+    for (int i = 0; i < numSockets; i++)
+    {
+        delete *(mSocketVector->getElement(i));
+    }
     delete mSocketVector;
 
     delete mLock;
-    }
+}
 
-
-
-void SocketManager::addSocket( Socket *inSocket ) {
+void SocketManager::addSocket(Socket *inSocket)
+{
 
     MutexLock *lock = mDataWrapper.mLock;
     SimpleVector<Socket *> *socketVector = mDataWrapper.mSocketVector;
 
-    
     lock->lock();
 
-    socketVector->push_back( inSocket );
-    
+    socketVector->push_back(inSocket);
+
     lock->unlock();
-    }
+}
 
-
-
-void SocketManager::breakConnection( Socket *inSocket ) {
+void SocketManager::breakConnection(Socket *inSocket)
+{
 
     MutexLock *lock = mDataWrapper.mLock;
     SimpleVector<Socket *> *socketVector = mDataWrapper.mSocketVector;
@@ -61,23 +51,24 @@ void SocketManager::breakConnection( Socket *inSocket ) {
 
     int numSockets = socketVector->size();
     char found = false;
-    
-    for( int i=0; i<numSockets && !found; i++ ) { 
 
-        Socket *currentSocket = *( socketVector->getElement( i ) );
+    for (int i = 0; i < numSockets && !found; i++)
+    {
 
-        if( currentSocket == inSocket ) {
+        Socket *currentSocket = *(socketVector->getElement(i));
+
+        if (currentSocket == inSocket)
+        {
             currentSocket->breakConnection();
             found = true;
-            }
         }
-    
-    lock->unlock();
     }
 
+    lock->unlock();
+}
 
-
-void SocketManager::destroySocket( Socket *inSocket ) {
+void SocketManager::destroySocket(Socket *inSocket)
+{
 
     MutexLock *lock = mDataWrapper.mLock;
     SimpleVector<Socket *> *socketVector = mDataWrapper.mSocketVector;
@@ -86,18 +77,20 @@ void SocketManager::destroySocket( Socket *inSocket ) {
 
     int numSockets = socketVector->size();
     char found = false;
-    
-    for( int i=0; i<numSockets && !found; i++ ) { 
 
-        Socket *currentSocket = *( socketVector->getElement( i ) );
+    for (int i = 0; i < numSockets && !found; i++)
+    {
 
-        if( currentSocket == inSocket ) {
+        Socket *currentSocket = *(socketVector->getElement(i));
+
+        if (currentSocket == inSocket)
+        {
             delete currentSocket;
-            socketVector->deleteElement( i );
-            
+            socketVector->deleteElement(i);
+
             found = true;
-            }
         }
-    
-    lock->unlock();
     }
+
+    lock->unlock();
+}

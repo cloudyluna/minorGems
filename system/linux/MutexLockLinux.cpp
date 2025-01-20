@@ -13,8 +13,6 @@
 
 #include "minorGems/common.h"
 
-
-
 #include <minorGems/system/MutexLock.h>
 #include <pthread.h>
 #include <stdlib.h>
@@ -28,49 +26,42 @@
  * g++ -lpthread
  */
 
+MutexLock::MutexLock()
+{
+    // allocate a mutex structure on the heap
+    mNativeObjectPointer = malloc(sizeof(pthread_mutex_t));
 
-MutexLock::MutexLock() {
-	// allocate a mutex structure on the heap
-	mNativeObjectPointer = malloc( sizeof( pthread_mutex_t ) );
-	
-	// get a pointer to the mutex
-	pthread_mutex_t *mutexPointer = 
-		(pthread_mutex_t *)mNativeObjectPointer;
-	
-	// init the mutex
-	pthread_mutex_init( mutexPointer, NULL );
-	}
+    // get a pointer to the mutex
+    pthread_mutex_t *mutexPointer = (pthread_mutex_t *)mNativeObjectPointer;
 
+    // init the mutex
+    pthread_mutex_init(mutexPointer, NULL);
+}
 
+MutexLock::~MutexLock()
+{
+    // get a pointer to the mutex
+    pthread_mutex_t *mutexPointer = (pthread_mutex_t *)mNativeObjectPointer;
 
-MutexLock::~MutexLock() {
-	// get a pointer to the mutex
-	pthread_mutex_t *mutexPointer = 
-		(pthread_mutex_t *)mNativeObjectPointer;
-	
-	// destroy the mutex	
-	pthread_mutex_destroy( mutexPointer );
-	
-	// de-allocate the mutex structure from the heap
-	free( mNativeObjectPointer );
-	}
+    // destroy the mutex
+    pthread_mutex_destroy(mutexPointer);
 
+    // de-allocate the mutex structure from the heap
+    free(mNativeObjectPointer);
+}
 
+void MutexLock::lock()
+{
+    // get a pointer to the mutex
+    pthread_mutex_t *mutexPointer = (pthread_mutex_t *)mNativeObjectPointer;
 
-void MutexLock::lock() {
-	// get a pointer to the mutex
-	pthread_mutex_t *mutexPointer = 
-		(pthread_mutex_t *)mNativeObjectPointer;
-	
-	pthread_mutex_lock( mutexPointer );
-	}
+    pthread_mutex_lock(mutexPointer);
+}
 
+void MutexLock::unlock()
+{
+    // get a pointer to the mutex
+    pthread_mutex_t *mutexPointer = (pthread_mutex_t *)mNativeObjectPointer;
 
-
-void MutexLock::unlock() {
-	// get a pointer to the mutex
-	pthread_mutex_t *mutexPointer = 
-		(pthread_mutex_t *)mNativeObjectPointer;
-	
-	pthread_mutex_unlock( mutexPointer );
-	}
+    pthread_mutex_unlock(mutexPointer);
+}

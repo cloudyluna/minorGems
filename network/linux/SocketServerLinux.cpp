@@ -5,11 +5,11 @@
  * Created.
  *
  * 2001-January-15		Jason Rohrer
- * Commented out redundant status messages that should be handled at a 
+ * Commented out redundant status messages that should be handled at a
  * higher level.
  *
  * 2001-January-28		Jason Rohrer
- * Changed to comply with new initSocketFramework Socket interface. 
+ * Changed to comply with new initSocketFramework Socket interface.
  *
  * 2001-January-29		Jason Rohrer
  * Fixed an endian bug with the port number.
@@ -21,7 +21,7 @@
  * Added a missing include.
  *
  * 2001-December-12		Jason Rohrer
- * Changed some type usage and the include order to make BSD compatible.  
+ * Changed some type usage and the include order to make BSD compatible.
  * Added a BSD definition test to make socklen_t type compatible
  * on both BSD and Linux.
  *
@@ -49,25 +49,21 @@
  * Fixed socklen_t on later versions of MacOSX.
  */
 
-
-
 #include "minorGems/network/SocketServer.h"
 
-#include <string.h>
-#include <sys/types.h>
-#include <sys/time.h>
-#include <unistd.h>
-#include <sys/socket.h>
 #include <netinet/in.h>
 #include <stdlib.h>
-
-
+#include <string.h>
+#include <sys/socket.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 // BSD does not define socklen_t
 #ifdef BSD
 #ifndef IPHONE
 #ifndef __OpenBSD__
-#ifndef _SOCKLEN_T     // later versions of MacOS define it and mark it
+#ifndef _SOCKLEN_T // later versions of MacOS define it and mark it
 typedef int socklen_t;
 #endif
 #endif
@@ -79,107 +75,104 @@ typedef int socklen_t;
 #include <sys/poll.h>
 #endif
 
-
 /**
  * BSD Compilation note:
  *
  * Use g++ option -DBSD to define the BSD preprocessor variable.
  */
 
+SocketServer::SocketServer(int inPort, int inMaxQueuedConnections)
+{
+    int error = 0;
 
+    if (!Socket::isFrameworkInitialized())
+    {
 
-SocketServer::SocketServer( int inPort, int inMaxQueuedConnections ) {
-	int error = 0;
-	
-	if( !Socket::isFrameworkInitialized() ) {
-		
-		// try to init the framework
-		
-		int error = Socket::initSocketFramework();
-		
-		if( error == -1 ) {
-			
-			printf( "initializing network socket framework failed\n" );
-			exit( 1 );
-			}
-		}
-	
-	// create the socket
-	mNativeSocketID = socket( AF_INET, SOCK_STREAM, 0 );
-	
-	int sockID = mNativeSocketID;
-	
-	if( sockID == -1 ) {
-		printf( "Failed to construct a socket\n" );
-		exit( 1 );
-    	}
-	
+        // try to init the framework
+
+        int error = Socket::initSocketFramework();
+
+        if (error == -1)
+        {
+
+            printf("initializing network socket framework failed\n");
+            exit(1);
+        }
+    }
+
+    // create the socket
+    mNativeSocketID = socket(AF_INET, SOCK_STREAM, 0);
+
+    int sockID = mNativeSocketID;
+
+    if (sockID == -1)
+    {
+        printf("Failed to construct a socket\n");
+        exit(1);
+    }
 
     // this setsockopt code partially copied from gnut
-    
+
     // set socket option to enable reusing addresses so that the socket is
     // unbound immediately when the server is shut down
     // (otherwise, rebinding to the same port will fail for a while
     //  after the server is shut down)
     int reuseAddressValue = 1;
-	error = setsockopt( sockID,
-                        SOL_SOCKET,      // socket-level option
-                        SO_REUSEADDR,    // reuse address option
-                        &reuseAddressValue,  // value to set for this option
-                        sizeof( reuseAddressValue) );  // size of the value
+    error = setsockopt(sockID,
+                       SOL_SOCKET,                 // socket-level option
+                       SO_REUSEADDR,               // reuse address option
+                       &reuseAddressValue,         // value to set for this option
+                       sizeof(reuseAddressValue)); // size of the value
 
-    
-    if( error == -1  ) {
-		printf( "Failed to set socket options\n" );
-		exit( 1 );
-		}
-	
-    	
-	// bind socket to the port
-    struct sockaddr_in address;
-	
-	address.sin_family = AF_INET;
-	address.sin_port = htons( inPort );
-	address.sin_addr.s_addr = INADDR_ANY;
-	
-	error = bind( sockID, (struct sockaddr *) &address, sizeof( address ) );
-	
-	if( error == -1  ) {
-		printf( "Bad socket bind, port %d\n", inPort );
-		exit( 1 );
-		}
-	
-	
-	// start listening for connections
-	error = listen( sockID, inMaxQueuedConnections );
-	if( error == -1 ) {
-		printf( "Bad socket listen\n" );
-		exit(1);
-		}
-	
-	}
-
-
-
-SocketServer::~SocketServer() {
-    close( mNativeSocketID );
+    if (error == -1)
+    {
+        printf("Failed to set socket options\n");
+        exit(1);
     }
-	
-	
-	
-Socket *SocketServer::acceptConnection( long inTimeoutInMilliseconds,
-                                        char *outTimedOut ) {
-    
-	// printf( "Waiting for a connection.\n" );
-	
+
+    // bind socket to the port
+    struct sockaddr_in address;
+
+    address.sin_family = AF_INET;
+    address.sin_port = htons(inPort);
+    address.sin_addr.s_addr = INADDR_ANY;
+
+    error = bind(sockID, (struct sockaddr *)&address, sizeof(address));
+
+    if (error == -1)
+    {
+        printf("Bad socket bind, port %d\n", inPort);
+        exit(1);
+    }
+
+    // start listening for connections
+    error = listen(sockID, inMaxQueuedConnections);
+    if (error == -1)
+    {
+        printf("Bad socket listen\n");
+        exit(1);
+    }
+}
+
+SocketServer::~SocketServer()
+{
+    close(mNativeSocketID);
+}
+
+Socket *SocketServer::acceptConnection(long inTimeoutInMilliseconds, char *outTimedOut)
+{
+
+    // printf( "Waiting for a connection.\n" );
+
     int socketID = mNativeSocketID;
 
-    if( outTimedOut != NULL ) {
+    if (outTimedOut != NULL)
+    {
         *outTimedOut = false;
-        }
+    }
 
-    
-    if( inTimeoutInMilliseconds != -1 ) {
+    if (inTimeoutInMilliseconds != -1)
+    {
         // if we have a timeout specified, select before accepting
 
         // this found in the Linux man page for select,
@@ -188,55 +181,43 @@ Socket *SocketServer::acceptConnection( long inTimeoutInMilliseconds,
         fd_set rfds;
         struct timeval tv;
         int retval;
-        
+
         // insert our socket descriptor into this set
-        FD_ZERO( &rfds );
-        FD_SET( socketID, &rfds );
+        FD_ZERO(&rfds);
+        FD_SET(socketID, &rfds);
 
         // convert our timeout into the structure's format
         tv.tv_sec = inTimeoutInMilliseconds / 1000;
-        tv.tv_usec = ( inTimeoutInMilliseconds % 1000 ) * 1000 ;
-        
-        retval = select( socketID + 1, &rfds, NULL, NULL, &tv );
-        if( retval == 0 ) {
-            // timeout
-            if( outTimedOut != NULL ) {
-                *outTimedOut = true;
-                }
+        tv.tv_usec = (inTimeoutInMilliseconds % 1000) * 1000;
 
-            return NULL;
+        retval = select(socketID + 1, &rfds, NULL, NULL, &tv);
+        if (retval == 0)
+        {
+            // timeout
+            if (outTimedOut != NULL)
+            {
+                *outTimedOut = true;
             }
 
-        
+            return NULL;
         }
-    
-    
-    int acceptedID = accept( socketID, NULL, NULL );
+    }
 
-    if( acceptedID == -1 ) {
-		printf( "Failed to accept a network connection.\n" );
-		return NULL;
-		}
-    else {
+    int acceptedID = accept(socketID, NULL, NULL);
+
+    if (acceptedID == -1)
+    {
+        printf("Failed to accept a network connection.\n");
+        return NULL;
+    }
+    else
+    {
 
         Socket *acceptedSocket = new Socket();
         acceptedSocket->mNativeSocketID = acceptedID;
-	
-        //printf( "Connection received.\n" );
-        
+
+        // printf( "Connection received.\n" );
+
         return acceptedSocket;
-        }
-	}	
-
-
-
-
-
-
-
-
-
-
-
-
-
+    }
+}

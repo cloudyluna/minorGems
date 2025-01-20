@@ -8,57 +8,48 @@
  * Added function for getting data as a byte array.
  */
 
-
-
 #include "minorGems/util/StringBufferOutputStream.h"
 
+StringBufferOutputStream::StringBufferOutputStream() : mCharacterVector(new SimpleVector<unsigned char>())
+{
+}
 
-
-StringBufferOutputStream::StringBufferOutputStream()
-    : mCharacterVector( new SimpleVector<unsigned char>() ) {
-
-    }
-
-
-
-StringBufferOutputStream::~StringBufferOutputStream() {
+StringBufferOutputStream::~StringBufferOutputStream()
+{
 
     delete mCharacterVector;
-    }
+}
 
-
-
-char *StringBufferOutputStream::getString() {
+char *StringBufferOutputStream::getString()
+{
 
     int numChars = mCharacterVector->size();
 
-    char *returnArray = new char[ numChars + 1 ];
+    char *returnArray = new char[numChars + 1];
 
-    for( int i=0; i<numChars; i++ ) {
-        returnArray[i] = (char)( *( mCharacterVector->getElement( i ) ) );
-        }
-    returnArray[ numChars ] = '\0';
+    for (int i = 0; i < numChars; i++)
+    {
+        returnArray[i] = (char)(*(mCharacterVector->getElement(i)));
+    }
+    returnArray[numChars] = '\0';
 
     return returnArray;
-    }
+}
 
-
-
-unsigned char *StringBufferOutputStream::getBytes( int *outNumBytes ) {
+unsigned char *StringBufferOutputStream::getBytes(int *outNumBytes)
+{
     *outNumBytes = mCharacterVector->size();
 
     return mCharacterVector->getElementArray();
+}
+
+long StringBufferOutputStream::write(unsigned char *inBuffer, long inNumBytes)
+{
+
+    for (int i = 0; i < inNumBytes; i++)
+    {
+        mCharacterVector->push_back(inBuffer[i]);
     }
 
-
-
-long StringBufferOutputStream::write( unsigned char *inBuffer,
-                                      long inNumBytes ) {
-
-    for( int i=0; i<inNumBytes; i++ ) {
-        mCharacterVector->push_back( inBuffer[ i ] );
-        }
-    
     return inNumBytes;
-    }
-
+}

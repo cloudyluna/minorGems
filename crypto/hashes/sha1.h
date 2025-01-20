@@ -14,14 +14,12 @@
  * Added HMAC-SHA1 implementation.
  */
 
-
-
 /*
  * sha.h
  *
  * Originally taken from the public domain SHA1 implementation
  * written by by Steve Reid <steve@edmweb.com>
- * 
+ *
  * Modified by Aaron D. Gifford <agifford@infowest.com>
  *
  * NO COPYRIGHT - THIS IS 100% IN THE PUBLIC DOMAIN
@@ -45,13 +43,11 @@
 #ifndef __SHA1_H__
 #define __SHA1_H__
 
-
 #include "minorGems/system/endian.h"
 
-    
 /* Make sure you define these types for your architecture: */
-typedef unsigned int sha1_quadbyte;	/* 4 byte type */
-typedef unsigned char sha1_byte;	/* single byte type */
+typedef unsigned int sha1_quadbyte; /* 4 byte type */
+typedef unsigned char sha1_byte;    /* single byte type */
 
 /*
  * Be sure to get the above definitions right.  For instance, on my
@@ -61,18 +57,16 @@ typedef unsigned char sha1_byte;	/* single byte type */
  * as "unsigned int" instead.
  */
 
-#define SHA1_BLOCK_LENGTH	64
-#define SHA1_DIGEST_LENGTH	20
+#define SHA1_BLOCK_LENGTH 64
+#define SHA1_DIGEST_LENGTH 20
 
 /* The SHA1 structure: */
-typedef struct _SHA_CTX {
-	sha1_quadbyte	state[5];
-	sha1_quadbyte	count[2];
-	sha1_byte	buffer[SHA1_BLOCK_LENGTH];
+typedef struct _SHA_CTX
+{
+    sha1_quadbyte state[5];
+    sha1_quadbyte count[2];
+    sha1_byte buffer[SHA1_BLOCK_LENGTH];
 } SHA_CTX;
-
-
-
 
 // BIG NOTE:
 // These overwrite the data!
@@ -80,9 +74,7 @@ typedef struct _SHA_CTX {
 // (the "nicer" functions below these 3 do not overwrite data)
 void SHA1_Init(SHA_CTX *context);
 void SHA1_Update(SHA_CTX *context, sha1_byte *data, unsigned int len);
-void SHA1_Final(sha1_byte digest[SHA1_DIGEST_LENGTH], SHA_CTX* context);
-
-
+void SHA1_Final(sha1_byte digest[SHA1_DIGEST_LENGTH], SHA_CTX *context);
 
 /**
  * Computes a unencoded 20-byte digest from data.
@@ -95,9 +87,7 @@ void SHA1_Final(sha1_byte digest[SHA1_DIGEST_LENGTH], SHA_CTX* context);
  * @return the digest as a byte array of length 20.
  *   Must be destroyed by caller.
  */
-unsigned char *computeRawSHA1Digest( unsigned char *inData, int inDataLength );
-
-
+unsigned char *computeRawSHA1Digest(unsigned char *inData, int inDataLength);
 
 /**
  * Computes a unencoded 20-byte digest from an arbitrary string message.
@@ -108,10 +98,8 @@ unsigned char *computeRawSHA1Digest( unsigned char *inData, int inDataLength );
  * @return the digest as a byte array of length 20.
  *   Must be destroyed by caller.
  */
-unsigned char *computeRawSHA1Digest( char *inString );
+unsigned char *computeRawSHA1Digest(char *inString);
 
-
-    
 /**
  * Computes a hex-encoded string digest from data.
  *
@@ -123,10 +111,8 @@ unsigned char *computeRawSHA1Digest( char *inString );
  * @return the digest as a \0-terminated string.
  *   Must be destroyed by caller.
  */
-char *computeSHA1Digest( unsigned char *inData, int inDataLength );
+char *computeSHA1Digest(unsigned char *inData, int inDataLength);
 
-
-    
 /**
  * Computes a hex-encoded string digest from an arbitrary string message.
  *
@@ -136,14 +122,9 @@ char *computeSHA1Digest( unsigned char *inData, int inDataLength );
  * @return the digest as a \0-terminated string.
  *   Must be destroyed by caller.
  */
-char *computeSHA1Digest( char *inString );
-
-
+char *computeSHA1Digest(char *inString);
 
 // computes SHA-1 based HMAC as defined in RFC 2104
-char *hmac_sha1( const char *inKey, const char *inData );
-
-
+char *hmac_sha1(const char *inKey, const char *inData);
 
 #endif
-

@@ -8,25 +8,17 @@
  * Added function for getting a token after reading.
  */
 
-
-
 #ifndef P2P_PROTOCOL_UTILS_INCLUDED
 #define P2P_PROTOCOL_UTILS_INCLUDED
 
-
-
 #include "minorGems/io/InputStream.h"
 #include "minorGems/io/OutputStream.h"
-
-
 
 /**
  * A collection of common protocol processing functions.
  *
  * @author Jason Rohrer
  */
-
-
 
 /**
  * Reads from a stream up to (and including) the
@@ -43,11 +35,7 @@
  *   reached.
  *   Must be destroyed by caller if non-NULL.
  */
-char *readStreamUpToTag( InputStream *inInputStream,
-                         char *inTag, int inMaxCharsToRead );
-
-
-
+char *readStreamUpToTag(InputStream *inInputStream, char *inTag, int inMaxCharsToRead);
 
 /**
  * Reads from a stream up to (and including) the
@@ -68,10 +56,6 @@ char *readStreamUpToTag( InputStream *inInputStream,
  *   reached.
  *   Must be destroyed by caller if non-NULL.
  */
-char *readStreamUpToTagAndGetToken( InputStream *inInputStream,
-                                    char *inTag, int inMaxCharsToRead,
-                                    int inTokenNumber );
-
-
+char *readStreamUpToTagAndGetToken(InputStream *inInputStream, char *inTag, int inMaxCharsToRead, int inTokenNumber);
 
 #endif

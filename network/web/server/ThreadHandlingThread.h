@@ -11,24 +11,19 @@
  * Moved into minorGems.
  */
 
-
- 
 #ifndef THREAD_HANDLING_THREAD_INCLUDED
-#define THREAD_HANDLING_THREAD_INCLUDED 
+#define THREAD_HANDLING_THREAD_INCLUDED
 
 #include "RequestHandlingThread.h"
 
 #include "minorGems/system/StopSignalThread.h"
 
-
 #include "minorGems/system/MutexLock.h"
 
 #include "minorGems/util/SimpleVector.h"
 
-
-#include <string.h>
 #include <stdio.h>
-
+#include <string.h>
 
 /**
  * Thread handler for the microWeb server.  Runs periodically
@@ -36,51 +31,34 @@
  *
  * @author Jason Rohrer.
  */
-class ThreadHandlingThread : public StopSignalThread {
+class ThreadHandlingThread : public StopSignalThread
+{
 
+  public:
+    /**
+     * Constructs and starts a handler.
+     */
+    ThreadHandlingThread();
 
-        
-    public:
+    /**
+     * Stops and destroys this handler.
+     */
+    ~ThreadHandlingThread();
 
+    /**
+     * Adds a thread to the set managed by this handler.
+     *
+     * @param inThread the thread to add.
+     */
+    void addThread(RequestHandlingThread *inThread);
 
+    // implements the Thread interface
+    virtual void run();
 
-        /**
-         * Constructs and starts a handler.
-         */
-        ThreadHandlingThread();
+  private:
+    SimpleVector<RequestHandlingThread *> *mThreadVector;
 
-
-
-        /**
-         * Stops and destroys this handler.
-         */
-        ~ThreadHandlingThread();
-
-
-        
-        /**
-         * Adds a thread to the set managed by this handler.
-         *
-         * @param inThread the thread to add.
-         */
-        void addThread( RequestHandlingThread *inThread );
-
-        
-        
-        // implements the Thread interface
-        virtual void run();
-
-
-        
-    private:
-
-        SimpleVector<RequestHandlingThread*> *mThreadVector;
-        
-        MutexLock *mLock;
-
-
-    };
-
-
+    MutexLock *mLock;
+};
 
 #endif

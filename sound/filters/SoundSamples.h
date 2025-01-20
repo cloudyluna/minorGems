@@ -8,93 +8,69 @@
  * Added a constructor that can specify all sound data.
  */
 
-
-
 #ifndef SOUND_SAMPLES_INCLUDED
 #define SOUND_SAMPLES_INCLUDED
-
-
 
 /**
  * Class that encapsulates a buffer of sound samples.
  *
  * @author Jason Rohrer
  */
-class SoundSamples {
+class SoundSamples
+{
 
+  public:
+    unsigned long mSampleCount;
 
-    public:
+    float *mLeftChannel;
+    float *mRightChannel;
 
-        unsigned long mSampleCount;
-        
-        float *mLeftChannel;
-        float *mRightChannel;
+    /**
+     * Constructs a sound samples object.
+     *
+     * @param inSampleCount the number of samples.
+     * @param inLeftChannel samples for the left channel.
+     *   Will be destroyed when this class is destroyed.
+     * @param inRightChannel samples for the right channel.
+     *   Will be destroyed when this class is destroyed.
+     */
+    SoundSamples(unsigned long inSampleCount, float *inLeftChannel, float *inRightChannel);
 
+    /**
+     * Constructs a sound samples object filled with 0 samples.
+     *
+     * @param inSampleCount the number of samples.
+     */
+    SoundSamples(unsigned long inSampleCount);
 
-        
-        /**
-         * Constructs a sound samples object.
-         *
-         * @param inSampleCount the number of samples.
-         * @param inLeftChannel samples for the left channel.
-         *   Will be destroyed when this class is destroyed.
-         * @param inRightChannel samples for the right channel.
-         *   Will be destroyed when this class is destroyed.
-         */
-        SoundSamples( unsigned long inSampleCount,
-                      float *inLeftChannel, float *inRightChannel );
+    /**
+     * Constructs a sound samples object by copying another object.
+     *
+     * @param inSamplesToCopy the object to copy.
+     *   Must be destroyed by caller.
+     */
+    SoundSamples(SoundSamples *inSamplesToCopy);
 
+    /**
+     * Constructs a sound samples object by copying samples from
+     * another object.
+     *
+     * @param inSamplesToCopy the object to copy.
+     *   Must be destroyed by caller.
+     * @param inNumToCopy the number of samples from the start of
+     *   inSamplesToCopy to take.
+     */
+    SoundSamples(SoundSamples *inSamplesToCopy, unsigned long inNumToCopy);
 
-        
-        /**
-         * Constructs a sound samples object filled with 0 samples.
-         *
-         * @param inSampleCount the number of samples.
-         */
-        SoundSamples( unsigned long inSampleCount );
+    ~SoundSamples();
 
-
-        
-        /**
-         * Constructs a sound samples object by copying another object.
-         *
-         * @param inSamplesToCopy the object to copy.
-         *   Must be destroyed by caller.
-         */
-        SoundSamples( SoundSamples *inSamplesToCopy );
-
-        
-
-        /**
-         * Constructs a sound samples object by copying samples from
-         * another object.
-         *
-         * @param inSamplesToCopy the object to copy.
-         *   Must be destroyed by caller.
-         * @param inNumToCopy the number of samples from the start of
-         *   inSamplesToCopy to take.
-         */
-        SoundSamples( SoundSamples *inSamplesToCopy,
-                      unsigned long inNumToCopy );
-
-        
-        
-        ~SoundSamples();
-
-
-        
-        /**
-         * Trims samples from the beginning of this sound.
-         *
-         * @param inNumSamplesToDrop the number of samples at the beginning
-         *   of this sound to drop.
-         */
-        void trim( unsigned long inNumSamplesToDrop );
-        
-
-        
-    };
-
-
+    /**
+     * Trims samples from the beginning of this sound.
+     *
+     * @param inNumSamplesToDrop the number of samples at the beginning
+     *   of this sound to drop.
+     */
+    void trim(unsigned long inNumSamplesToDrop);
+};
 
 #endif

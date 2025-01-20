@@ -12,8 +12,8 @@
  * Changed to subclass PopluationMember to allow for abstraction of population
  * sorting.
  *
- * 2000-December-13		Jason Rohrer  
- * Moved into minorGems. 
+ * 2000-December-13		Jason Rohrer
+ * Moved into minorGems.
  */
 
 #ifndef NEURAL_NET_INCLUDED
@@ -22,44 +22,44 @@
 #include "minorGems/ai/genetic/PopulationMember.h"
 
 /**
- * Superclass for a generic neural network. 
+ * Superclass for a generic neural network.
  *
- * @author Jason Rohrer 
+ * @author Jason Rohrer
  */
-class NeuralNet : public PopulationMember {
+class NeuralNet : public PopulationMember
+{
 
-	public:
-		
-		// note that these functions are declared virtual
-		// primarily so dynamic casts would work
-		
-		/**
-		 * Gets the number of input nodes in this network.
-		 *
-		 * @return the number of input nodes in this network.
-		 */
-		virtual int getNumInputs();
-		
-		/**
-		 * Gets the number of output nodes in this network.
-		 *
-		 * @return the number of output nodes in this network.
-		 */
-		virtual int getNumOutputs();
-		
-		
-	protected:
-		int mNumInputs;
-		int mNumOutputs;
-	}; 
+  public:
+    // note that these functions are declared virtual
+    // primarily so dynamic casts would work
 
+    /**
+     * Gets the number of input nodes in this network.
+     *
+     * @return the number of input nodes in this network.
+     */
+    virtual int getNumInputs();
 
-inline int NeuralNet::getNumInputs() {
-	return mNumInputs;
-	}
-	
-inline int NeuralNet::getNumOutputs() {
-	return mNumOutputs;
-	}
+    /**
+     * Gets the number of output nodes in this network.
+     *
+     * @return the number of output nodes in this network.
+     */
+    virtual int getNumOutputs();
+
+  protected:
+    int mNumInputs;
+    int mNumOutputs;
+};
+
+inline int NeuralNet::getNumInputs()
+{
+    return mNumInputs;
+}
+
+inline int NeuralNet::getNumOutputs()
+{
+    return mNumOutputs;
+}
 
 #endif

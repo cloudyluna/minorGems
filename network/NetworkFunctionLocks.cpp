@@ -5,13 +5,9 @@
  * Created.
  */
 
-
-
 #include "NetworkFunctionLocks.h"
-
 
 // instantiate static members
 MutexLock NetworkFunctionLocks::mGetHostByNameLock;
 
 MutexLock NetworkFunctionLocks::mInet_ntoaLock;
-

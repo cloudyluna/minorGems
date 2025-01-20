@@ -7,8 +7,8 @@
 
 #include <sys/types.h>
 #ifndef WIN32
-#include <sys/socket.h>
 #include <netinet/in.h>
+#include <sys/socket.h>
 #endif
 
 #ifdef DMALLOC
@@ -16,44 +16,42 @@
 #endif
 
 #ifndef MIN
-	#define MIN(a,b) (((a < b)) ? (a) : (b))
-	#define MAX(a,b) (((a > b)) ? (a) : (b))
+#define MIN(a, b) (((a < b)) ? (a) : (b))
+#define MAX(a, b) (((a > b)) ? (a) : (b))
 #endif
 
 #ifndef __bswap_16
-  #define __bswap_16(x) \
-    ((((x) >> 8) & 0xff) | (((x) &0xff) <<8))
+#define __bswap_16(x) ((((x) >> 8) & 0xff) | (((x) & 0xff) << 8))
 #endif
-      
+
 #ifndef __bswap_32
-  #define __bswap_32(x) \
-    ((((x) & 0xff000000) >> 24) | (((x) & 0x00ff0000) >> 8) | \
-    (((x) & 0x0000ff00) << 8) | (((x) & 0x000000ff) << 24))
+#define __bswap_32(x)                                                                                                  \
+    ((((x) & 0xff000000) >> 24) | (((x) & 0x00ff0000) >> 8) | (((x) & 0x0000ff00) << 8) | (((x) & 0x000000ff) << 24))
 #endif
-                                                
+
 #ifndef GUINT16_TO_LE
 #ifdef WORDS_BIGENDIAN
-  #define GUINT16_TO_LE(x)  __bswap_16(x)
-  #define GUINT32_TO_LE(x)  __bswap_32(x)
-  #define GUINT16_FROM_LE(x)  __bswap_16(x)
-  #define GUINT32_FROM_LE(x)  __bswap_32(x)
+#define GUINT16_TO_LE(x) __bswap_16(x)
+#define GUINT32_TO_LE(x) __bswap_32(x)
+#define GUINT16_FROM_LE(x) __bswap_16(x)
+#define GUINT32_FROM_LE(x) __bswap_32(x)
 #else
-  #define GUINT16_TO_LE(x)  (x)
-  #define GUINT32_TO_LE(x)  (x)
-  #define GUINT16_FROM_LE(x)  (x)
-  #define GUINT32_FROM_LE(x)  (x)
+#define GUINT16_TO_LE(x) (x)
+#define GUINT32_TO_LE(x) (x)
+#define GUINT16_FROM_LE(x) (x)
+#define GUINT32_FROM_LE(x) (x)
 #endif
 #endif
 
-typedef unsigned int 	uint32;
-typedef unsigned short 	uint16;
-typedef unsigned char	uchar;
+typedef unsigned int uint32;
+typedef unsigned short uint16;
+typedef unsigned char uchar;
 #ifndef WIN32
 typedef unsigned long long uint64;
 
-//#define g_debug(num, format, args... ) 
-#define g_debug(num, format, args... ) _g_debug(__FUNCTION__,__LINE__, num, format, ##args)
-void _g_debug(char *,int,int num, char *,...);
+// #define g_debug(num, format, args... )
+#define g_debug(num, format, args...) _g_debug(__FUNCTION__, __LINE__, num, format, ##args)
+void _g_debug(char *, int, int num, char *, ...);
 #endif
 
 extern int gnut_lib_debug;
@@ -96,8 +94,7 @@ extern int optind;
 #define O_NONBLOCK 1
 int fcntl(int sock, int, uint);
 
-#define flock(a,b) 0
+#define flock(a, b) 0
 #endif
-
 
 #endif

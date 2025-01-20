@@ -15,130 +15,131 @@
  * Moved into minorGems.
  */
 
-
-
 #include "ConnectionPermissionHandler.h"
-
-
 
 #include "minorGems/io/file/File.h"
 
 #include "minorGems/util/SettingsManager.h"
 
+ConnectionPermissionHandler::ConnectionPermissionHandler()
+{
 
-
-ConnectionPermissionHandler::ConnectionPermissionHandler() {
-
-    SimpleVector<char *> *addressVector =
-        SettingsManager::getSetting( "allowedWebHosts" );
+    SimpleVector<char *> *addressVector = SettingsManager::getSetting("allowedWebHosts");
 
     int numAddresses = addressVector->size();
 
     mPermittedAddresses = new SimpleVector<HostAddress *>();
     mPermittedPatterns = new SimpleVector<char *>();
-    
-    for( int i=0; i<numAddresses; i++ ) {
 
-        char *addressString = *( addressVector->getElement( i ) );
+    for (int i = 0; i < numAddresses; i++)
+    {
 
-        char *starLocation = strstr( addressString, "*" );
-        
-        if( starLocation == NULL ) {
+        char *addressString = *(addressVector->getElement(i));
+
+        char *starLocation = strstr(addressString, "*");
+
+        if (starLocation == NULL)
+        {
             // an address
-        
-            mPermittedAddresses->push_back(
-                new HostAddress( addressString, 0 ) );
-            }
-        else {
-            // an address pattern
-            mPermittedPatterns->push_back( addressString );
-            }
+
+            mPermittedAddresses->push_back(new HostAddress(addressString, 0));
         }
+        else
+        {
+            // an address pattern
+            mPermittedPatterns->push_back(addressString);
+        }
+    }
 
     delete addressVector;
-    }
+}
 
-
-
-ConnectionPermissionHandler::~ConnectionPermissionHandler() {
+ConnectionPermissionHandler::~ConnectionPermissionHandler()
+{
     int numAddresses = mPermittedAddresses->size();
     int i;
-    
-    for( i=0; i<numAddresses; i++ ) {
 
-        HostAddress *address = *( mPermittedAddresses->getElement( i ) );
+    for (i = 0; i < numAddresses; i++)
+    {
 
-        delete address;        
-        }
+        HostAddress *address = *(mPermittedAddresses->getElement(i));
+
+        delete address;
+    }
 
     int numPatterns = mPermittedPatterns->size();
-    
-    for( i=0; i<numPatterns; i++ ) {
-        
-        char *pattern = *( mPermittedPatterns->getElement( i ) );
 
-        delete [] pattern;        
-        }
-    
-    delete mPermittedAddresses;
-    delete mPermittedPatterns;
+    for (i = 0; i < numPatterns; i++)
+    {
+
+        char *pattern = *(mPermittedPatterns->getElement(i));
+
+        delete[] pattern;
     }
 
+    delete mPermittedAddresses;
+    delete mPermittedPatterns;
+}
 
-char ConnectionPermissionHandler::isPermitted( HostAddress *inAddress ) {
-    
+char ConnectionPermissionHandler::isPermitted(HostAddress *inAddress)
+{
+
     int numAddresses = mPermittedAddresses->size();
     int i;
-    for( i=0; i<numAddresses; i++ ) {
+    for (i = 0; i < numAddresses; i++)
+    {
 
-        HostAddress *address = *( mPermittedAddresses->getElement( i ) );
+        HostAddress *address = *(mPermittedAddresses->getElement(i));
 
-        if( address->equals( inAddress ) ) {
+        if (address->equals(inAddress))
+        {
             return true;
-            }
         }
+    }
 
     // didn't match any address exactly
 
-    
     // check if it matches one of our patterns
-    HostAddress* numericalAddress = inAddress->getNumericalAddress();
-    if( numericalAddress == NULL ) {
+    HostAddress *numericalAddress = inAddress->getNumericalAddress();
+    if (numericalAddress == NULL)
+    {
         return false;
-        }
+    }
 
     char *addressString = numericalAddress->mAddressString;
 
     int numPatterns = mPermittedPatterns->size();
 
     char foundMatch = false;
-    
-    for( i=0; i<numPatterns && !foundMatch; i++ ) {
 
-        char *pattern = *( mPermittedPatterns->getElement( i ) );
-        
-        int patternLength = strlen( pattern );
+    for (i = 0; i < numPatterns && !foundMatch; i++)
+    {
 
-        int addressLength = strlen( addressString );
+        char *pattern = *(mPermittedPatterns->getElement(i));
+
+        int patternLength = strlen(pattern);
+
+        int addressLength = strlen(addressString);
 
         char done = false;
-        
-        for( int j=0; j<patternLength && j<addressLength && !done; j++ ) {
 
-            if( pattern[j] == '*' ) {
+        for (int j = 0; j < patternLength && j < addressLength && !done; j++)
+        {
+
+            if (pattern[j] == '*')
+            {
                 foundMatch = true;
                 done = true;
-                }
-            else if( pattern[j] != addressString[j] ) {
+            }
+            else if (pattern[j] != addressString[j])
+            {
                 done = true;
                 foundMatch = false;
-                }            
             }
         }
-
-    delete numericalAddress;
-    
-    return foundMatch;
     }
 
+    delete numericalAddress;
 
+    return foundMatch;
+}

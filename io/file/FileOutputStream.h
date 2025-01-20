@@ -21,9 +21,7 @@
 
 #include "minorGems/common.h"
 
-
 #include "File.h"
-
 
 #ifndef FILE_OUTPUT_STREAM_CLASS_INCLUDED
 #define FILE_OUTPUT_STREAM_CLASS_INCLUDED
@@ -36,140 +34,131 @@
  * File implementation of an OutputStream.
  *
  * @author Jason Rohrer
- */ 
-class FileOutputStream : public OutputStream {
+ */
+class FileOutputStream : public OutputStream
+{
 
-	public:
-		
-		/**
-		 * Constructs an output stream.
-		 *
-		 * @param inFile the file to open for writing.
-		 *   If the file does not exist, it will be created.
-		 *   inFile is NOT destroyed when this class is destroyed.
-		 * @param inAppend set to true to append to file.  If
-		 *   file does not exist, file is still created.  Defaults
-		 *   to false.
-		 */
-		FileOutputStream( File *inFile, char inAppend = false );
-		
-		
-		/**
-		 * Destroys this stream and closes the file.
-		 */
-		~FileOutputStream();
-		
-		
-		/**
-		 * Gets the file attached to this stream.
-		 *
-		 * @return the file used by this stream.
-		 *   Should not be modified or destroyed by caller until after
-		 *   this class is destroyed.
-		 */
-		File *getFile();
-		
-		
-		// implementst OutputStream interface
-		virtual long write( unsigned char *inBuffer, long inNumBytes );
-		
-	private:
-		File *mFile;
-		
-		FILE *mUnderlyingFile;
-	};		
+  public:
+    /**
+     * Constructs an output stream.
+     *
+     * @param inFile the file to open for writing.
+     *   If the file does not exist, it will be created.
+     *   inFile is NOT destroyed when this class is destroyed.
+     * @param inAppend set to true to append to file.  If
+     *   file does not exist, file is still created.  Defaults
+     *   to false.
+     */
+    FileOutputStream(File *inFile, char inAppend = false);
 
+    /**
+     * Destroys this stream and closes the file.
+     */
+    ~FileOutputStream();
 
+    /**
+     * Gets the file attached to this stream.
+     *
+     * @return the file used by this stream.
+     *   Should not be modified or destroyed by caller until after
+     *   this class is destroyed.
+     */
+    File *getFile();
 
+    // implementst OutputStream interface
+    virtual long write(unsigned char *inBuffer, long inNumBytes);
 
-inline FileOutputStream::FileOutputStream( File *inFile, 
-	char inAppend ) 
-	: mFile( inFile ) {
-	
-	int fileNameLength;
-	
-	char *fileName = mFile->getFullFileName( &fileNameLength );
-	
-	if( inAppend ) {
-		mUnderlyingFile = fopen( fileName, "ab" );
-		}
-	else {
-		mUnderlyingFile = fopen( fileName, "wb" );
-		}
-		
-	if( mUnderlyingFile == NULL ) {
-		// file open failed.
-		
-		char *stringBuffer = new char[ fileNameLength + 50 ];
-		sprintf( stringBuffer, "Opening file %s failed.", fileName );
-		setNewLastError( stringBuffer );
-		}
-	
-	delete [] fileName;	
-	}
-	
+  private:
+    File *mFile;
 
+    FILE *mUnderlyingFile;
+};
 
-inline FileOutputStream::~FileOutputStream() {
-	if( mUnderlyingFile != NULL ) {
-		fclose( mUnderlyingFile );
-		}	
-	}
+inline FileOutputStream::FileOutputStream(File *inFile, char inAppend) : mFile(inFile)
+{
 
+    int fileNameLength;
 
-	
-inline File *FileOutputStream::getFile() {
-	return mFile;
-	}
-	
-	
-	
-inline long FileOutputStream::write( 
-	unsigned char *inBuffer, long inNumBytes ) {
-	
-	if( mUnderlyingFile != NULL ) {
-	
-		long numWritten =
-			fwrite( inBuffer, 1, inNumBytes, mUnderlyingFile );
+    char *fileName = mFile->getFullFileName(&fileNameLength);
 
-		if( numWritten < inNumBytes ) {
-			int fileNameLength;
-			char *fileName = mFile->getFullFileName( &fileNameLength );
+    if (inAppend)
+    {
+        mUnderlyingFile = fopen(fileName, "ab");
+    }
+    else
+    {
+        mUnderlyingFile = fopen(fileName, "wb");
+    }
 
-			// some other kind of error occured
-			char *stringBuffer = new char[ fileNameLength + 50 ];
-			sprintf( stringBuffer, "Writing to file %s failed.", 
-				fileName );
-			setNewLastError( stringBuffer );
+    if (mUnderlyingFile == NULL)
+    {
+        // file open failed.
 
-			delete [] fileName;
-			
-			if( numWritten == 0 ) {
-				// a complete write failure
-				return -1;
-				}
-			}
+        char *stringBuffer = new char[fileNameLength + 50];
+        sprintf(stringBuffer, "Opening file %s failed.", fileName);
+        setNewLastError(stringBuffer);
+    }
 
-		return numWritten;
-		}
-	else {
-		// file was not opened properly
-		
-		int fileNameLength;
-		char *fileName = mFile->getFullFileName( &fileNameLength );
-		char *stringBuffer = new char[ fileNameLength + 50 ];
-		sprintf( stringBuffer, 
-			"File %s was not opened properly before writing.", 
-			fileName );
-        
-        delete [] fileName;
+    delete[] fileName;
+}
 
-		setNewLastError( stringBuffer );
-		
-		return -1;
-		}
-	}
+inline FileOutputStream::~FileOutputStream()
+{
+    if (mUnderlyingFile != NULL)
+    {
+        fclose(mUnderlyingFile);
+    }
+}
 
-	
-	
+inline File *FileOutputStream::getFile()
+{
+    return mFile;
+}
+
+inline long FileOutputStream::write(unsigned char *inBuffer, long inNumBytes)
+{
+
+    if (mUnderlyingFile != NULL)
+    {
+
+        long numWritten = fwrite(inBuffer, 1, inNumBytes, mUnderlyingFile);
+
+        if (numWritten < inNumBytes)
+        {
+            int fileNameLength;
+            char *fileName = mFile->getFullFileName(&fileNameLength);
+
+            // some other kind of error occured
+            char *stringBuffer = new char[fileNameLength + 50];
+            sprintf(stringBuffer, "Writing to file %s failed.", fileName);
+            setNewLastError(stringBuffer);
+
+            delete[] fileName;
+
+            if (numWritten == 0)
+            {
+                // a complete write failure
+                return -1;
+            }
+        }
+
+        return numWritten;
+    }
+    else
+    {
+        // file was not opened properly
+
+        int fileNameLength;
+        char *fileName = mFile->getFullFileName(&fileNameLength);
+        char *stringBuffer = new char[fileNameLength + 50];
+        sprintf(stringBuffer, "File %s was not opened properly before writing.", fileName);
+
+        delete[] fileName;
+
+        setNewLastError(stringBuffer);
+
+        return -1;
+    }
+}
+
 #endif

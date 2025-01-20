@@ -17,8 +17,6 @@
 
 #include "minorGems/common.h"
 
-
-
 /*
 
     Declaration of POSIX directory browsing functions and types for Win32.
@@ -32,7 +30,7 @@
     that this copyright and permissions notice appear in all copies and
     derivatives, and that no charge may be made for the software and its
     documentation except to cover cost of distribution.
-    
+
 */
 
 #ifndef DIRENT_INCLUDED
@@ -45,33 +43,27 @@ struct dirent
     char *d_name;
 };
 
-DIR           *opendir(const char *);
-int           closedir(DIR *);
+DIR *opendir(const char *);
+int closedir(DIR *);
 struct dirent *readdir(DIR *);
-void          rewinddir(DIR *);
-
-
+void rewinddir(DIR *);
 
 #include <sys/stat.h>
 /**
  * The Metrowerks Standard Library seems
  * to have only a 1-parameter mkdir command in sys/stat.h.
  */
-int mkdir( const char *pathname, unsigned int mode );
-
+int mkdir(const char *pathname, unsigned int mode);
 
 // make sure our needed macros are defined
 // S_IFMT and S_IFDIR seem to be defined everywhere
 
 #ifndef __S_ISTYPE
-#define __S_ISTYPE(mode, mask)  (((mode) & S_IFMT) == (mask))
+#define __S_ISTYPE(mode, mask) (((mode) & S_IFMT) == (mask))
 #endif
 
-
 #ifndef S_ISDIR
-#define S_ISDIR(mode)    __S_ISTYPE((mode), S_IFDIR)
-#endif    
-
-
+#define S_ISDIR(mode) __S_ISTYPE((mode), S_IFDIR)
+#endif
 
 #endif

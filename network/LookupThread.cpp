@@ -11,64 +11,60 @@
  * Changed to copy inAddress internally.
  */
 
-
 #include "LookupThread.h"
 
-
-LookupThread::LookupThread( HostAddress *inAddress )
-        : mAddress( inAddress->copy() ), mNumericalAddress( NULL ),
-          mLookupDone( false ) {
+LookupThread::LookupThread(HostAddress *inAddress)
+    : mAddress(inAddress->copy()), mNumericalAddress(NULL), mLookupDone(false)
+{
 
     start();
-    }
+}
 
-
-LookupThread::~LookupThread() {
+LookupThread::~LookupThread()
+{
     join();
-    
+
     delete mAddress;
-    
-    if( mNumericalAddress != NULL ) {
+
+    if (mNumericalAddress != NULL)
+    {
         delete mNumericalAddress;
-        }
     }
+}
 
-
-char LookupThread::isLookupDone() {
+char LookupThread::isLookupDone()
+{
     mLock.lock();
     char done = mLookupDone;
     mLock.unlock();
-    
+
     return done;
-    }
+}
 
-
-
-HostAddress *LookupThread::getResult() {
+HostAddress *LookupThread::getResult()
+{
     mLock.lock();
     HostAddress *result = NULL;
-    
-    if( mNumericalAddress != NULL ) {
-        result = mNumericalAddress->copy();
-        }
-    
-    mLock.unlock();
-    
 
-    return result;
+    if (mNumericalAddress != NULL)
+    {
+        result = mNumericalAddress->copy();
     }
 
+    mLock.unlock();
 
+    return result;
+}
 
-void LookupThread::run() {
-    
+void LookupThread::run()
+{
+
     HostAddress *numAddress = mAddress->getNumericalAddress();
-    
 
-    mLock.lock();        
+    mLock.lock();
     mLookupDone = true;
     mNumericalAddress = numAddress;
     mLock.unlock();
 
     setFinished();
-    }
+}

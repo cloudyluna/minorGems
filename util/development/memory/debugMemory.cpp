@@ -18,78 +18,55 @@
  * Removed function that was no longer being used.
  */
 
-
-
 #include "minorGems/util/development/memory/debugMemory.h"
-
 
 #ifdef DEBUG_MEMORY
 
 #include "minorGems/util/development/memory/MemoryTrack.h"
 
-#include "stdlib.h"
 #include "stdio.h"
+#include "stdlib.h"
 
+void *debugMemoryNew(unsigned int inSize, const char *inFileName, int inLine)
+{
 
+    void *allocatedPointer = (void *)malloc(inSize);
 
-void *debugMemoryNew( unsigned int inSize,
-                      const char *inFileName, int inLine ) {
+    MemoryTrack::addAllocation(allocatedPointer, inSize, SINGLE_ALLOCATION, inFileName, inLine);
 
-    
-    void *allocatedPointer = (void *)malloc( inSize );
+    return allocatedPointer;
+}
 
-    MemoryTrack::addAllocation( allocatedPointer, inSize,
-                                SINGLE_ALLOCATION,
-                                inFileName, inLine );
-    
-    return allocatedPointer;    
-    }
-
-
-
-void *debugMemoryNewArray( unsigned int inSize,
-                           const char *inFileName, int inLine ) {
+void *debugMemoryNewArray(unsigned int inSize, const char *inFileName, int inLine)
+{
 
     unsigned int mallocSize = inSize;
-    if( inSize == 0 ) {
+    if (inSize == 0)
+    {
         // always allocate at least one byte to circumvent differences
         // between malloc and new[] on some platforms
         // (new int[0] returns a pointer to an array of length 0, while
         //  malloc( 0 ) can return NULL on some platforms)
         mallocSize = 1;
-        }
-
-    void *allocatedPointer = (void *)malloc( mallocSize );
-
-    MemoryTrack::addAllocation( allocatedPointer, inSize,
-                                ARRAY_ALLOCATION,
-                                inFileName, inLine );
-    
-    return allocatedPointer;    
     }
 
+    void *allocatedPointer = (void *)malloc(mallocSize);
 
+    MemoryTrack::addAllocation(allocatedPointer, inSize, ARRAY_ALLOCATION, inFileName, inLine);
 
-void debugMemoryDelete( void *inPointer ) {
-    MemoryTrack::addDeallocation( inPointer, SINGLE_ALLOCATION );
-    free( inPointer );
-    }
+    return allocatedPointer;
+}
 
+void debugMemoryDelete(void *inPointer)
+{
+    MemoryTrack::addDeallocation(inPointer, SINGLE_ALLOCATION);
+    free(inPointer);
+}
 
-
-void debugMemoryDeleteArray( void *inPointer ) {
-    MemoryTrack::addDeallocation( inPointer, ARRAY_ALLOCATION );
-    free( inPointer );
-    }
-
-
+void debugMemoryDeleteArray(void *inPointer)
+{
+    MemoryTrack::addDeallocation(inPointer, ARRAY_ALLOCATION);
+    free(inPointer);
+}
 
 #endif
-
-
-
-
-
-
-
-

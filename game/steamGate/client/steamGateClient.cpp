@@ -1,13 +1,13 @@
 
 
-#include "minorGems/util/SettingsManager.h"
-#include "minorGems/util/stringUtils.h"
-#include "minorGems/network/web/WebClient.h"
 #include "minorGems/formats/encodingUtils.h"
-#include "minorGems/util/log/AppLog.h"
-#include "minorGems/util/log/FileLog.h"
+#include "minorGems/network/web/WebClient.h"
 #include "minorGems/system/Thread.h"
 #include "minorGems/system/Time.h"
+#include "minorGems/util/SettingsManager.h"
+#include "minorGems/util/log/AppLog.h"
+#include "minorGems/util/log/FileLog.h"
+#include "minorGems/util/stringUtils.h"
 
 #include "minorGems/crypto/cryptoRandom.h"
 #include "minorGems/crypto/keyExchange/curve25519.h"
@@ -15,13 +15,11 @@
 #define STEAM_API_NON_VERSIONED_INTERFACES 1
 
 #include "steam/steam_api.h"
-//#include "openSteamworks/Steamclient.h"
-
+// #include "openSteamworks/Steamclient.h"
 
 /////////////////////
 // settings:
-static const char *steamGateServerURL = 
-"http://onehouronelife.com/steamGate/server.php";
+static const char *steamGateServerURL = "http://onehouronelife.com/steamGate/server.php";
 
 #define linuxLaunchTarget "./OneLifeApp"
 #define macLaunchTarget "OneLife.app"
@@ -32,374 +30,341 @@ static const char *steamGateServerURL =
 // end settings
 /////////////////////
 
-
-
 #ifdef __mac__
 
-#include <unistd.h>
 #include <stdarg.h>
 #include <sys/wait.h>
+#include <unistd.h>
 
-static void launchGame() {
-    AppLog::info( "Launching game." );
+static void launchGame()
+{
+    AppLog::info("Launching game.");
     int forkValue = fork();
 
-    if( forkValue == 0 ) {
+    if (forkValue == 0)
+    {
         // we're in child process, so exec command
-        char *arguments[3] = { "open", (char*)macLaunchTarget, NULL };
-                
-        execvp( "open", arguments );
+        char *arguments[3] = {"open", (char *)macLaunchTarget, NULL};
+
+        execvp("open", arguments);
 
         // we'll never return from this call
-        }
-    else {
+    }
+    else
+    {
         // parent
-        AppLog::infoF( "Waiting for child game process %d to exit.",
-                       forkValue );
+        AppLog::infoF("Waiting for child game process %d to exit.", forkValue);
         double startTime = Time::getCurrentTime();
-        int returnStatus;    
-        waitpid( forkValue, &returnStatus, 0 );
+        int returnStatus;
+        waitpid(forkValue, &returnStatus, 0);
 
-        AppLog::infoF( "Child game process ran for %f minutes before exiting.",
-                       ( Time::getCurrentTime() - startTime ) / 60 );
-        }
+        AppLog::infoF("Child game process ran for %f minutes before exiting.",
+                      (Time::getCurrentTime() - startTime) / 60);
     }
+}
 
-
-static void showMessage( const char *inTitle, const char *inMessage,
-                         char inError = false ) {
+static void showMessage(const char *inTitle, const char *inMessage, char inError = false)
+{
     const char *iconName = "note";
-    if( inError ) {
+    if (inError)
+    {
         iconName = "stop";
-        }
-
-    const char *commandFormat =
-        "osascript -e 'tell app \"System Events\" to activate' "
-        "-e 'tell app \"System Events\" to display dialog \"%s\" "
-        "with title \"%s\" buttons \"Ok\" "
-        "with icon %s default button \"Ok\"' "
-        "-e 'tell app \"System Events\" to quit' ";
-    
-    char *command = autoSprintf( commandFormat, inMessage, inTitle, 
-                                 iconName );
-    
-    FILE *osascriptPipe = popen( command, "r" );
-    
-    delete [] command;
-    
-    if( osascriptPipe == NULL ) {
-        AppLog::error( 
-            "Failed to open pipe to osascript for displaying GUI messages." );
-        }
-    else {
-        pclose( osascriptPipe );
-        }
     }
 
+    const char *commandFormat = "osascript -e 'tell app \"System Events\" to activate' "
+                                "-e 'tell app \"System Events\" to display dialog \"%s\" "
+                                "with title \"%s\" buttons \"Ok\" "
+                                "with icon %s default button \"Ok\"' "
+                                "-e 'tell app \"System Events\" to quit' ";
 
+    char *command = autoSprintf(commandFormat, inMessage, inTitle, iconName);
+
+    FILE *osascriptPipe = popen(command, "r");
+
+    delete[] command;
+
+    if (osascriptPipe == NULL)
+    {
+        AppLog::error("Failed to open pipe to osascript for displaying GUI messages.");
+    }
+    else
+    {
+        pclose(osascriptPipe);
+    }
+}
 
 #elif defined(LINUX)
 
-#include <unistd.h>
 #include <stdarg.h>
 #include <sys/wait.h>
+#include <unistd.h>
 
-static void launchGame() {
-    AppLog::info( "Launching game" );
+static void launchGame()
+{
+    AppLog::info("Launching game");
     int forkValue = fork();
 
-    if( forkValue == 0 ) {
+    if (forkValue == 0)
+    {
         // we're in child process, so exec command
-        char *arguments[2] = { (char*)linuxLaunchTarget, NULL };
-                
-        execvp( linuxLaunchTarget, arguments );
+        char *arguments[2] = {(char *)linuxLaunchTarget, NULL};
+
+        execvp(linuxLaunchTarget, arguments);
 
         // we'll never return from this call
-        }
-    else {
+    }
+    else
+    {
         // parent
-        AppLog::infoF( "Waiting for child game process %d to exit.",
-                       forkValue );
+        AppLog::infoF("Waiting for child game process %d to exit.", forkValue);
         double startTime = Time::getCurrentTime();
-        int returnStatus;    
-        waitpid( forkValue, &returnStatus, 0 );
+        int returnStatus;
+        waitpid(forkValue, &returnStatus, 0);
 
-        AppLog::infoF( "Child game process ran for %f minutes before exiting.",
-                       ( Time::getCurrentTime() - startTime ) / 60 );
-        }
+        AppLog::infoF("Child game process ran for %f minutes before exiting.",
+                      (Time::getCurrentTime() - startTime) / 60);
     }
+}
 
-
-
-static void showMessage( const char *inTitle, const char *inMessage,
-                         char inError = false ) {
+static void showMessage(const char *inTitle, const char *inMessage, char inError = false)
+{
     const char *zenCommand = "--info";
-    if( inError ) {
+    if (inError)
+    {
         zenCommand = "--error";
-        }
-
-    char *command = autoSprintf( "zenity %s --text='%s' --title='%s'",
-                                 zenCommand, inMessage, inTitle );
-
-    FILE *zentityPipe = popen( command, "r" );
-    
-    delete [] command;
-
-    if( zentityPipe == NULL ) {
-        AppLog::error( 
-            "Failed to open pipe to zenity for displaying GUI messages." );
-        }
-    else {
-        pclose( zentityPipe );
-        }
     }
 
+    char *command = autoSprintf("zenity %s --text='%s' --title='%s'", zenCommand, inMessage, inTitle);
+
+    FILE *zentityPipe = popen(command, "r");
+
+    delete[] command;
+
+    if (zentityPipe == NULL)
+    {
+        AppLog::error("Failed to open pipe to zenity for displaying GUI messages.");
+    }
+    else
+    {
+        pclose(zentityPipe);
+    }
+}
 
 #elif defined(WIN_32)
 
-#include <windows.h>
 #include <process.h>
+#include <windows.h>
 
-static void launchGame() {
-    AppLog::info( "Launching game" );
-    char *arguments[2] = { (char*)winLaunchTarget, NULL };
-    
-    AppLog::infoF( "Waiting for child game process to exit after launching." );
+static void launchGame()
+{
+    AppLog::info("Launching game");
+    char *arguments[2] = {(char *)winLaunchTarget, NULL};
+
+    AppLog::infoF("Waiting for child game process to exit after launching.");
     double startTime = Time::getCurrentTime();
-    
-    _spawnvp( _P_WAIT, winLaunchTarget, arguments );
-    
-    AppLog::infoF( "Child game process ran for %f minutes before exiting.",
-                   ( Time::getCurrentTime() - startTime ) / 60 );
-    }
 
+    _spawnvp(_P_WAIT, winLaunchTarget, arguments);
+
+    AppLog::infoF("Child game process ran for %f minutes before exiting.", (Time::getCurrentTime() - startTime) / 60);
+}
 
 #include <stdlib.h>
 
-static void showMessage( const char *inTitle, const char *inMessage,
-                         char inError = false ) {
+static void showMessage(const char *inTitle, const char *inMessage, char inError = false)
+{
     UINT uType = MB_OK | MB_TOPMOST;
-    
-    if( inError ) {
-        uType |= MB_ICONERROR;
-        }
-    else {
-        uType |= MB_ICONINFORMATION;    
-        }
-    
-    wchar_t *wideTitle = new wchar_t[ strlen( inTitle ) * 2 + 2 ];
-    mbstowcs( wideTitle, inTitle, strlen( inTitle ) + 1 );
-    
-    wchar_t *wideMessage = new wchar_t[ strlen( inMessage ) * 2 + 2 ];
-    mbstowcs( wideMessage, inMessage, strlen( inMessage ) + 1 );
-    
-    MessageBox( NULL, wideMessage, wideTitle, uType );
 
-    delete [] wideTitle;
-    delete [] wideMessage;
+    if (inError)
+    {
+        uType |= MB_ICONERROR;
+    }
+    else
+    {
+        uType |= MB_ICONINFORMATION;
     }
 
+    wchar_t *wideTitle = new wchar_t[strlen(inTitle) * 2 + 2];
+    mbstowcs(wideTitle, inTitle, strlen(inTitle) + 1);
+
+    wchar_t *wideMessage = new wchar_t[strlen(inMessage) * 2 + 2];
+    mbstowcs(wideMessage, inMessage, strlen(inMessage) + 1);
+
+    MessageBox(NULL, wideMessage, wideTitle, uType);
+
+    delete[] wideTitle;
+    delete[] wideMessage;
+}
 
 int main();
 
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCMD)
+{
 
-int WINAPI WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance,
-                    LPSTR lpCmdLine, int nShowCMD ) {
-    
     return main();
-    }
+}
 
 #endif
-
-
-
-
 
 static char authTicketCallbackCalled = false;
 static char authTicketCallbackError = false;
 
-
-
 // a class that does nothing other than register itself as a Steam
 // callback listener when it is constructed
-class AuthTicketListener {
-        
-    public:
-        
-        AuthTicketListener() 
-                // initializing this member object is what actually
-                // registers our callback
-                : mAuthSessionTicketResponse( 
-                    this, 
-                    &AuthTicketListener::OnAuthSessionTicketResponse ) {
-            AppLog::info( "AuthTicketListener instantiated" );
-            }
+class AuthTicketListener
+{
 
-        
-        // callback when our AuthSessionTicket is ready
-        // this macro declares our callback function for us AND
-        // defines our member object
-        STEAM_CALLBACK( 
-            // class that the callback function is in
-            AuthTicketListener, 
-            // name of callback function
-            OnAuthSessionTicketResponse,
-            // type of callback
-            GetAuthSessionTicketResponse_t, 
-            // name of the member object       
-            mAuthSessionTicketResponse );
-
-
-    };
-
-
-
-void AuthTicketListener::OnAuthSessionTicketResponse( 
-    GetAuthSessionTicketResponse_t *inCallback ) {
-    
-    AppLog::info( "AuthTicketListener callback called" );
-
-    authTicketCallbackCalled = true;
-            
-    if ( inCallback->m_eResult != k_EResultOK ) {
-        authTicketCallbackError = true;
-        }
-    }        
-
-
-
-
-static void showTicketCreationError() {
-    showMessage( gameName ":  Error",
-                 "Could not create an account for you on the game server.",
-                 true );
+  public:
+    AuthTicketListener()
+        // initializing this member object is what actually
+        // registers our callback
+        : mAuthSessionTicketResponse(this, &AuthTicketListener::OnAuthSessionTicketResponse)
+    {
+        AppLog::info("AuthTicketListener instantiated");
     }
 
+    // callback when our AuthSessionTicket is ready
+    // this macro declares our callback function for us AND
+    // defines our member object
+    STEAM_CALLBACK(
+        // class that the callback function is in
+        AuthTicketListener,
+        // name of callback function
+        OnAuthSessionTicketResponse,
+        // type of callback
+        GetAuthSessionTicketResponse_t,
+        // name of the member object
+        mAuthSessionTicketResponse);
+};
 
+void AuthTicketListener::OnAuthSessionTicketResponse(GetAuthSessionTicketResponse_t *inCallback)
+{
 
+    AppLog::info("AuthTicketListener callback called");
 
+    authTicketCallbackCalled = true;
 
-int main() {
+    if (inCallback->m_eResult != k_EResultOK)
+    {
+        authTicketCallbackError = true;
+    }
+}
 
-    AppLog::setLog( new FileLog( "log_steamGate.txt" ) );
-    AppLog::setLoggingLevel( Log::DETAIL_LEVEL );
+static void showTicketCreationError()
+{
+    showMessage(gameName ":  Error", "Could not create an account for you on the game server.", true);
+}
 
+int main()
+{
+
+    AppLog::setLog(new FileLog("log_steamGate.txt"));
+    AppLog::setLoggingLevel(Log::DETAIL_LEVEL);
 
     // before we even check for login info, see if we've been tasked
     // with marking the app as dirty
-    FILE *f = fopen( "steamGateForceUpdate.txt", "r" );
-    if( f != NULL ) {
-        AppLog::info( "steamGateForceUpdate.txt file exists." );
+    FILE *f = fopen("steamGateForceUpdate.txt", "r");
+    if (f != NULL)
+    {
+        AppLog::info("steamGateForceUpdate.txt file exists.");
 
         int val = 0;
-        
-        fscanf( f, "%d", &val );
-        fclose( f );
 
+        fscanf(f, "%d", &val);
+        fclose(f);
 
-        if( val == 1 ) {
-            AppLog::info( "steamGateForceUpdate.txt file contains '1' flag." );
+        if (val == 1)
+        {
+            AppLog::info("steamGateForceUpdate.txt file contains '1' flag.");
 
             // we've been signaled to mark app as dirty
-            
-            if( ! SteamAPI_Init() ) {
-                showMessage( gameName ":  Error",
-                             "Failed to connect to Steam.",
-                             true );
-                AppLog::error( "Could not init Steam API." );
-                return 0;
-                }
 
-            AppLog::info( "Calling MarkContentCorrupt." );
+            if (!SteamAPI_Init())
+            {
+                showMessage(gameName ":  Error", "Failed to connect to Steam.", true);
+                AppLog::error("Could not init Steam API.");
+                return 0;
+            }
+
+            AppLog::info("Calling MarkContentCorrupt.");
 
             // only check for missing files
             // not sure what this param does if a new depot is available
-            SteamApps()->MarkContentCorrupt( true );
-            
+            SteamApps()->MarkContentCorrupt(true);
+
             // done, mark so we skip this next time
-            f = fopen( "steamGateForceUpdate.txt", "w" );
-            if( f != NULL ) {
-                fprintf( f, "0" );
-                fclose( f );
-                }
-            
-            AppLog::info( "Done forcing update, exiting." );
+            f = fopen("steamGateForceUpdate.txt", "w");
+            if (f != NULL)
+            {
+                fprintf(f, "0");
+                fclose(f);
+            }
+
+            AppLog::info("Done forcing update, exiting.");
             SteamAPI_Shutdown();
             return 0;
-            }
         }
+    }
 
+    char *accountKey = SettingsManager::getStringSetting("accountKey");
+    char *email = SettingsManager::getStringSetting("email");
 
-    char *accountKey = SettingsManager::getStringSetting( "accountKey" );
-    char *email = SettingsManager::getStringSetting( "email" );
+    if (accountKey != NULL && email != NULL && strcmp(accountKey, "") != 0 && strcmp(email, "") != 0)
+    {
 
+        delete[] accountKey;
+        delete[] email;
 
-    if( accountKey != NULL && 
-        email != NULL &&
-        strcmp( accountKey, "" ) != 0 &&
-        strcmp( email, "" ) != 0 ) {
-
-        delete [] accountKey;
-        delete [] email;
-        
-        AppLog::info( "We already have saved login info.  Launching game." );
+        AppLog::info("We already have saved login info.  Launching game.");
         launchGame();
-        AppLog::info( "Exiting." );
+        AppLog::info("Exiting.");
         return 0;
-        }
+    }
 
-    
-    if( accountKey != NULL ) {
-        delete [] accountKey;
-        }
-     
-    if( email != NULL ) {
-        delete [] email;
-        }
-    
-    showMessage( gameName ":  First Launch",
-                 "The game will try to create a server-side account for"
-                 " you through Steam.\n\nThis may take a few moments." );
-    
-    AppLog::info( "No login info found.  "
-                  "Executing first-login protocol with server." );
+    if (accountKey != NULL)
+    {
+        delete[] accountKey;
+    }
 
-    
-    if( ! SteamAPI_Init() ) {
-        showMessage( gameName ":  Error",
-                     "Failed to connect to Steam.",
-                     true );
-        AppLog::error( "Could not init Steam API." );
+    if (email != NULL)
+    {
+        delete[] email;
+    }
+
+    showMessage(gameName ":  First Launch", "The game will try to create a server-side account for"
+                                            " you through Steam.\n\nThis may take a few moments.");
+
+    AppLog::info("No login info found.  "
+                 "Executing first-login protocol with server.");
+
+    if (!SteamAPI_Init())
+    {
+        showMessage(gameName ":  Error", "Failed to connect to Steam.", true);
+        AppLog::error("Could not init Steam API.");
         return 0;
-        }
-    
+    }
 
     CSteamID id = SteamUser()->GetSteamID();
-    
+
     uint64 rawID = id.ConvertToUint64();
 
-    
-    
-    AppLog::infoF( "Steam ID %lli", rawID );
-
+    AppLog::infoF("Steam ID %lli", rawID);
 
     unsigned int appID = SteamUtils()->GetAppID();
 
-    AppLog::infoF( "App ID %d", appID );
-    
+    AppLog::infoF("App ID %d", appID);
 
     char loggedOn = SteamUser()->BLoggedOn();
-    
-    AppLog::infoF( "Logged onto steam: %d", loggedOn );
+
+    AppLog::infoF("Logged onto steam: %d", loggedOn);
 
     char behindNAT = SteamUser()->BIsBehindNAT();
-    
-    AppLog::infoF( "Behind NAT: %d", behindNAT );
+
+    AppLog::infoF("Behind NAT: %d", behindNAT);
 
     /*
     EUserHasLicenseForAppResult doesNotOwnApp =
         SteamUser()->UserHasLicenseForApp( id, appID );
-    
+
     AppLog::infoF( "doesNotOwnApp = %d", doesNotOwnApp );
     */
 
@@ -409,223 +374,196 @@ int main() {
     unsigned char authTicketData[2048];
     uint32 authTicketSize = 0;
     HAuthTicket ticketHandle =
-        SteamUser()->GetAuthSessionTicket( 
-            authTicketData, sizeof(authTicketData), 
-            &authTicketSize );
-        
+        SteamUser()->GetAuthSessionTicket(authTicketData, sizeof(authTicketData), &authTicketSize);
 
-    AppLog::infoF( "GetAuthSessionTicket returned %d bytes, handle %d",
-                   authTicketSize, ticketHandle );
+    AppLog::infoF("GetAuthSessionTicket returned %d bytes, handle %d", authTicketSize, ticketHandle);
 
-    if( authTicketSize == 0 ) {
-        
-        showMessage( gameName ":  Error",
-                     "Could not get an Authentication Ticket from Steam.",
-                     true );
-        AppLog::error( "GetAuthSessionTicket returned 0 length." );
-        
+    if (authTicketSize == 0)
+    {
+
+        showMessage(gameName ":  Error", "Could not get an Authentication Ticket from Steam.", true);
+        AppLog::error("GetAuthSessionTicket returned 0 length.");
+
         SteamAPI_Shutdown();
         return 0;
-        }
-    
+    }
 
-    AppLog::info( "Waiting for Steam GetAuthSessionTicket callback..." );
-    
+    AppLog::info("Waiting for Steam GetAuthSessionTicket callback...");
+
     double startTime = Time::getCurrentTime();
     double maxTime = 20;
-    
-    while( ! authTicketCallbackCalled ) {
-        if( Time::getCurrentTime() - startTime > maxTime ) {
-            showMessage( gameName ":  Error",
-                         "Timed out waiting for "
-                         "Authentication Ticket validation from Steam.",
-                         true );
-            AppLog::error( "Timed out." );
+
+    while (!authTicketCallbackCalled)
+    {
+        if (Time::getCurrentTime() - startTime > maxTime)
+        {
+            showMessage(gameName ":  Error",
+                        "Timed out waiting for "
+                        "Authentication Ticket validation from Steam.",
+                        true);
+            AppLog::error("Timed out.");
             SteamAPI_Shutdown();
             return 0;
-            }
-        
-        Thread::staticSleep( 100 );
-        SteamAPI_RunCallbacks();
         }
 
-    AppLog::info( "...got callback." );
+        Thread::staticSleep(100);
+        SteamAPI_RunCallbacks();
+    }
+
+    AppLog::info("...got callback.");
 
     // de-register listener
     delete listener;
-    
-    if( authTicketCallbackError ) {
-        showMessage( gameName ":  Error",
-                     "Could not validate the Steam Authentication Ticket.",
-                     true );
-        AppLog::error( "GetAuthSessionTicket callback returned error." );
+
+    if (authTicketCallbackError)
+    {
+        showMessage(gameName ":  Error", "Could not validate the Steam Authentication Ticket.", true);
+        AppLog::error("GetAuthSessionTicket callback returned error.");
         SteamAPI_Shutdown();
         return 0;
-        }
-    
+    }
 
-    char *authTicketHex = hexEncode( authTicketData, authTicketSize );
-    
-    AppLog::infoF( "Auth ticket data:  %s", authTicketHex );
+    char *authTicketHex = hexEncode(authTicketData, authTicketSize);
 
+    AppLog::infoF("Auth ticket data:  %s", authTicketHex);
 
-    
-
-
-    
     unsigned char ourPubKey[32];
     unsigned char ourSecretKey[32];
-    
-    char gotSecret = 
-        getCryptoRandomBytes( ourSecretKey, 32 );
-    
-    if( ! gotSecret ) {
-        showMessage( gameName ":  Error",
-                     "Could not get random data to generate an "
-                     "encryption key.",
-                     true );
-        AppLog::error( "Failed to get secure random bytes for "
-                       "key generation." );
+
+    char gotSecret = getCryptoRandomBytes(ourSecretKey, 32);
+
+    if (!gotSecret)
+    {
+        showMessage(gameName ":  Error",
+                    "Could not get random data to generate an "
+                    "encryption key.",
+                    true);
+        AppLog::error("Failed to get secure random bytes for "
+                      "key generation.");
         SteamAPI_Shutdown();
         return 0;
-        }
-    
-    
-    curve25519_genPublicKey( ourPubKey, ourSecretKey );
-    
+    }
 
-    char *ourPubKeyHex = hexEncode( ourPubKey, 32 );
-    
-    char *webRequest = 
-        autoSprintf( 
-            "%s?action=get_account"
-            "&auth_session_ticket=%s"
-            "&client_public_key=%s",
-            steamGateServerURL,
-            authTicketHex,
-            ourPubKeyHex );
-            
-    delete [] ourPubKeyHex;
-    delete [] authTicketHex;
+    curve25519_genPublicKey(ourPubKey, ourSecretKey);
 
-    AppLog::infoF( "Web request to URL: %s", webRequest );
-    
-    //printf( "Waiting....\n" );
-    //int read;
-    //scanf( "%d", &read );
-    
+    char *ourPubKeyHex = hexEncode(ourPubKey, 32);
+
+    char *webRequest = autoSprintf("%s?action=get_account"
+                                   "&auth_session_ticket=%s"
+                                   "&client_public_key=%s",
+                                   steamGateServerURL, authTicketHex, ourPubKeyHex);
+
+    delete[] ourPubKeyHex;
+    delete[] authTicketHex;
+
+    AppLog::infoF("Web request to URL: %s", webRequest);
+
+    // printf( "Waiting....\n" );
+    // int read;
+    // scanf( "%d", &read );
+
     int resultLength;
-    char *webResult = WebClient::getWebPage( webRequest, &resultLength );
-         
-    delete [] webRequest;
-    
+    char *webResult = WebClient::getWebPage(webRequest, &resultLength);
 
-    if( webResult == NULL ) {
+    delete[] webRequest;
+
+    if (webResult == NULL)
+    {
         showTicketCreationError();
-        AppLog::error( "Failed to get response from server." );
-        
+        AppLog::error("Failed to get response from server.");
+
         SteamAPI_Shutdown();
         return 0;
-        }
-    
+    }
 
-    SimpleVector<char *> *tokens = tokenizeString( webResult );
-    
-    
-    
-    if( tokens->size() != 3 || 
-        strlen( *( tokens->getElement( 0 ) ) ) != 64 ) {
+    SimpleVector<char *> *tokens = tokenizeString(webResult);
+
+    if (tokens->size() != 3 || strlen(*(tokens->getElement(0))) != 64)
+    {
         showTicketCreationError();
-        AppLog::errorF( "Unexpected server response:  %s",
-                        webResult );
-        
-        delete [] webResult;
-        for( int i=0; i<tokens->size(); i++ ) {
-            delete [] *( tokens->getElement(i) );
-            }
+        AppLog::errorF("Unexpected server response:  %s", webResult);
+
+        delete[] webResult;
+        for (int i = 0; i < tokens->size(); i++)
+        {
+            delete[] *(tokens->getElement(i));
+        }
         delete tokens;
-        
+
         SteamAPI_Shutdown();
         return 0;
-        }
+    }
 
+    char *serverPublicKeyHex = *(tokens->getElement(0));
+    email = *(tokens->getElement(1));
+    char *encryptedTicketHex = *(tokens->getElement(2));
 
-    char *serverPublicKeyHex = *( tokens->getElement( 0 ) );
-    email = *( tokens->getElement( 1 ) );
-    char *encryptedTicketHex = *( tokens->getElement( 2 ) );
+    unsigned char *serverPublicKey = hexDecode(serverPublicKeyHex);
+    delete[] serverPublicKeyHex;
 
-
-    unsigned char *serverPublicKey = hexDecode( serverPublicKeyHex );
-    delete [] serverPublicKeyHex;
-    
-    if( serverPublicKey == NULL ) {
+    if (serverPublicKey == NULL)
+    {
         showTicketCreationError();
-        AppLog::errorF( "Unexpected server response:  %s",
-                        webResult );
-        
-        delete [] email;
-        delete [] encryptedTicketHex;
-        delete [] webResult;
+        AppLog::errorF("Unexpected server response:  %s", webResult);
+
+        delete[] email;
+        delete[] encryptedTicketHex;
+        delete[] webResult;
         delete tokens;
-        
+
         SteamAPI_Shutdown();
         return 0;
-        }
-    
-    
+    }
+
     unsigned char sharedSecretKey[32];
 
-    curve25519_genSharedSecretKey( sharedSecretKey, ourSecretKey, 
-                                   serverPublicKey );
-    delete [] serverPublicKey;
-    
+    curve25519_genSharedSecretKey(sharedSecretKey, ourSecretKey, serverPublicKey);
+    delete[] serverPublicKey;
 
-    int numTicketBytes = strlen( encryptedTicketHex ) / 2;
-    unsigned char *encryptedTicket = hexDecode( encryptedTicketHex );
-    delete [] encryptedTicketHex;
-    
-    if( encryptedTicket == NULL ) {
+    int numTicketBytes = strlen(encryptedTicketHex) / 2;
+    unsigned char *encryptedTicket = hexDecode(encryptedTicketHex);
+    delete[] encryptedTicketHex;
+
+    if (encryptedTicket == NULL)
+    {
         showTicketCreationError();
-        AppLog::errorF( "Unexpected server response:  %s",
-                        webResult );
-    
-        delete [] email;
-        delete [] webResult;
+        AppLog::errorF("Unexpected server response:  %s", webResult);
+
+        delete[] email;
+        delete[] webResult;
         delete tokens;
-        
+
         SteamAPI_Shutdown();
         return 0;
-        }
-    
-    char *plaintextTicket = new char[ numTicketBytes + 1 ];
-    
-    for( int i=0; i<numTicketBytes; i++ ) {
+    }
+
+    char *plaintextTicket = new char[numTicketBytes + 1];
+
+    for (int i = 0; i < numTicketBytes; i++)
+    {
         plaintextTicket[i] = encryptedTicket[i] ^ sharedSecretKey[i];
-        }
+    }
 
-    plaintextTicket[ numTicketBytes ] = '\0';
-    delete [] encryptedTicket;
+    plaintextTicket[numTicketBytes] = '\0';
+    delete[] encryptedTicket;
 
+    AppLog::infoF("Decrypted ticket as:  %s", plaintextTicket);
 
-    AppLog::infoF( "Decrypted ticket as:  %s", plaintextTicket );
-    
-    SettingsManager::setSetting( "email", email );
-    SettingsManager::setSetting( "accountKey", plaintextTicket );
-    
-    
-    delete [] plaintextTicket;
-    delete [] email;
-    delete [] webResult;
+    SettingsManager::setSetting("email", email);
+    SettingsManager::setSetting("accountKey", plaintextTicket);
+
+    delete[] plaintextTicket;
+    delete[] email;
+    delete[] webResult;
     delete tokens;
-    
+
     SteamAPI_Shutdown();
 
-    showMessage( gameName ":  First Launch",
-                 "Your server account is set up.\n\n"
-                 "The game will launch now." );
+    showMessage(gameName ":  First Launch", "Your server account is set up.\n\n"
+                                            "The game will launch now.");
 
     launchGame();
-    
-    AppLog::info( "Exiting." );
+
+    AppLog::info("Exiting.");
     return 0;
-    }
+}

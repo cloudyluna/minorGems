@@ -6,7 +6,7 @@
  *
  * 2001-February-4		Jason Rohrer
  * Fixed a bug that made this test not compatible with TypeIO.
- * Fixed comment.  
+ * Fixed comment.
  */
 
 #include <stdio.h>
@@ -15,7 +15,7 @@
 
 /*
  * The output from a big-endian linux is as follows:
- *	
+ *
  *	size of double = 8
  *	byte 0 = 63
  *	byte 1 = 255
@@ -28,22 +28,19 @@
  *
  */
 
-int main() {
-	printf( "size of double = %d\n", sizeof( double ) );
-	
-	
-	
-	
-	
-	double x = 1.983773889;
-	
-	
-	unsigned char *doubleBuffer = (unsigned char*)( &x );
-	
-	for( int i=0; i<8; i++ ) {
-		
-		printf( "byte %d = %d\n", i, doubleBuffer[i] );
-		}
-		
-	return 0;
-	}
+int main()
+{
+    printf("size of double = %d\n", sizeof(double));
+
+    double x = 1.983773889;
+
+    unsigned char *doubleBuffer = (unsigned char *)(&x);
+
+    for (int i = 0; i < 8; i++)
+    {
+
+        printf("byte %d = %d\n", i, doubleBuffer[i]);
+    }
+
+    return 0;
+}

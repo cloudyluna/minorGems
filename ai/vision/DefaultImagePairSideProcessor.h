@@ -2,13 +2,11 @@
  * Modification History
  *
  * 2001-February-20		Jason Rohrer
- * Created.   
+ * Created.
  */
- 
- 
-#ifndef DEFAULT_IMAGE_PAIR_SIDE_PROCESSOR_INCLUDED
-#define DEFAULT_IMAGE_PAIR_SIDE_PROCESSOR_INCLUDED 
 
+#ifndef DEFAULT_IMAGE_PAIR_SIDE_PROCESSOR_INCLUDED
+#define DEFAULT_IMAGE_PAIR_SIDE_PROCESSOR_INCLUDED
 
 #include "minorGems/graphics/Image.h"
 
@@ -17,22 +15,17 @@
  *
  * @author Jason Rohrer
  */
-class DefaultImagePairSideProcessor : public ImagePairSideProcessor {
-	
-	public:
-		
-		// implements ImagePairSideProcessor interface
-		virtual void process( Image *inLeft, Image *inRight );	
-	};
+class DefaultImagePairSideProcessor : public ImagePairSideProcessor
+{
 
+  public:
+    // implements ImagePairSideProcessor interface
+    virtual void process(Image *inLeft, Image *inRight);
+};
 
+inline void DefaultImagePairSideProcessor::process(Image *inLeft, Image *inRight)
+{
+    // do nothing
+}
 
-inline void DefaultImagePairSideProcessor::process( 
-	Image *inLeft, Image *inRight ) {
-	// do nothing
-	
-	}
-	
-	
-	
 #endif

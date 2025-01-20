@@ -65,26 +65,17 @@
  * tokenizeStringInPlace is 3x faster.
  */
 
-
-
 #include "minorGems/common.h"
 #include "minorGems/util/SimpleVector.h"
-
-
 
 #ifndef STRING_UTILS_INCLUDED
 #define STRING_UTILS_INCLUDED
 
-
-
 // ANSI does not support strdup, strcasestr, or strcasecmp
-#include <string.h>
 #include <ctype.h>
-#include <stdio.h>
 #include <stdarg.h>
-
-
-
+#include <stdio.h>
+#include <string.h>
 
 /**
  * Duplicates a string into a newly allocated string.
@@ -95,16 +86,15 @@
  * @return a \0-terminated duplicate of inString.
  *   Must be destroyed by caller.
  */
-inline char *stringDuplicate( const char *inString ) {
-    
-    char *returnBuffer = new char[ strlen( inString ) + 1 ];
+inline char *stringDuplicate(const char *inString)
+{
 
-    strcpy( returnBuffer, inString );
+    char *returnBuffer = new char[strlen(inString) + 1];
 
-    return returnBuffer;    
-    }
+    strcpy(returnBuffer, inString);
 
-
+    return returnBuffer;
+}
 
 /**
  * Converts a string to lower case.
@@ -116,9 +106,7 @@ inline char *stringDuplicate( const char *inString ) {
  *   that is a lowercase version of inString.
  *   Must be destroyed by caller.
  */
-char *stringToLowerCase( const char *inString  );
-
-
+char *stringToLowerCase(const char *inString);
 
 /**
  * Converts a string to upper case.
@@ -130,9 +118,7 @@ char *stringToLowerCase( const char *inString  );
  *   that is a uppercase version of inString.
  *   Must be destroyed by caller.
  */
-char *stringToUpperCase( const char *inString  );
-
-
+char *stringToUpperCase(const char *inString);
 
 /**
  * Searches for the first occurrence of one string in another.
@@ -145,10 +131,7 @@ char *stringToUpperCase( const char *inString  );
  * @return a string pointer into inHaystack where the
  *   first occurrence of inNeedle starts, or NULL if inNeedle is not found.
  */
-char *stringLocateIgnoreCase( const char *inHaystack,
-                              const char *inNeedle );
-
-
+char *stringLocateIgnoreCase(const char *inHaystack, const char *inNeedle);
 
 /**
  * Compares two strings, ignoring case.
@@ -162,10 +145,7 @@ char *stringLocateIgnoreCase( const char *inHaystack,
  *   inStringA is found,  respectively,  to  be  less  than, to match, or be
  *   greater than inStringB.
  */
-int stringCompareIgnoreCase( const char *inStringA,
-                             const char *inStringB );
-
-
+int stringCompareIgnoreCase(const char *inStringA, const char *inStringB);
 
 /**
  * Checks if a string starts with a given prefix string.
@@ -177,9 +157,7 @@ int stringCompareIgnoreCase( const char *inStringA,
  *
  * @return true if inString begins with inPrefix, or false otherwise.
  */
-char stringStartsWith( const char *inString, const char *inPrefix );
-
-
+char stringStartsWith(const char *inString, const char *inPrefix);
 
 /**
  * Splits a string into parts around a separator string.
@@ -200,16 +178,13 @@ char stringStartsWith( const char *inString, const char *inPrefix );
  *   Must be destroyed by caller if non-const.
  * @param inSeparator the separator string.
  *   Must be destroyed by caller if non-const.
- * @param outNumParts pointer to where the the number of parts (the length of 
+ * @param outNumParts pointer to where the the number of parts (the length of
  *   the returned array) should be returned.
  *
  * @return an array of split parts.
  *   Must be destroyed by caller.
  */
-char **split( const char *inString, const char *inSeparator, 
-              int *outNumParts );
-
-
+char **split(const char *inString, const char *inSeparator, int *outNumParts);
 
 /**
  * Joins a collection of strings using a separator string.
@@ -223,9 +198,7 @@ char **split( const char *inString, const char *inSeparator,
  * @return the joined string.
  *   Must be destroyed by caller.
  */
-char *join( char **inStrings, int inNumParts, const char *inGlue );
-
-
+char *join(char **inStrings, int inNumParts, const char *inGlue);
 
 /**
  * Concatonates two strings.
@@ -238,9 +211,7 @@ char *join( char **inStrings, int inNumParts, const char *inGlue );
  * @return the concatonation.
  *   Must be destroyed by caller.
  */
-char *concatonate( const char *inStringA, const char *inStringB );
-
-
+char *concatonate(const char *inStringA, const char *inStringB);
 
 /**
  * Replaces the first occurrence of a target string with
@@ -248,7 +219,7 @@ char *concatonate( const char *inStringA, const char *inStringB );
  *
  * All parameters and return value must be destroyed by caller.
  *
- * @param inHaystack the string to search for inTarget in. 
+ * @param inHaystack the string to search for inTarget in.
  * @param inTarget the string to search for.
  * @param inSubstitute the string to replace the first occurrence
  *   of the target with.
@@ -258,15 +229,11 @@ char *concatonate( const char *inStringA, const char *inStringB );
  *
  * @return a newly allocated string with the substitution performed.
  */
-char *replaceOnce( const char *inHaystack, const char *inTarget,
-                   const char *inSubstitute,
-                   char *outFound,
-                   // start looking some number of characters into inHaystack
-                   int inSkipChars = 0,
-                   // if non-NULL, index after replacement is returned here
-                   int *outAfterReplacementIndex = NULL );
-
-
+char *replaceOnce(const char *inHaystack, const char *inTarget, const char *inSubstitute, char *outFound,
+                  // start looking some number of characters into inHaystack
+                  int inSkipChars = 0,
+                  // if non-NULL, index after replacement is returned here
+                  int *outAfterReplacementIndex = NULL);
 
 /**
  * Replaces the all occurrences of a target string with
@@ -275,10 +242,10 @@ char *replaceOnce( const char *inHaystack, const char *inTarget,
  * Note that this function is not self-insertion-safe:
  * If inSubstitute contains inTarget, this function will
  * enter an infinite loop.
- *         
+ *
  * All parameters and return value must be destroyed by caller.
  *
- * @param inHaystack the string to search for inTarget in. 
+ * @param inHaystack the string to search for inTarget in.
  * @param inTarget the string to search for.
  * @param inSubstitute the string to replace the all occurrences
  *   of the target with.
@@ -288,11 +255,7 @@ char *replaceOnce( const char *inHaystack, const char *inTarget,
  *
  * @return a newly allocated string with the substitutions performed.
  */
-char *replaceAll( const char *inHaystack, const char *inTarget,
-                  const char *inSubstitute,
-                  char *outFound );
-
-
+char *replaceAll(const char *inHaystack, const char *inTarget, const char *inSubstitute, char *outFound);
 
 /**
  * Replaces the all occurrences of each target string on a list with
@@ -301,10 +264,10 @@ char *replaceAll( const char *inHaystack, const char *inTarget,
  * Note that this function is not self-insertion-safe:
  * If inSubstituteVector contains elements from inTargetVector,
  * this function will enter an infinite loop.
- *         
+ *
  * All parameters and return value must be destroyed by caller.
  *
- * @param inHaystack the string to search for targets in. 
+ * @param inHaystack the string to search for targets in.
  * @param inTargetVector the list of strings to search for.
  *   Vector and contained strings must be destroyed by caller.
  * @param inSubstituteVector the corresponding list of strings to
@@ -313,13 +276,8 @@ char *replaceAll( const char *inHaystack, const char *inTarget,
  *
  * @return a newly allocated string with the substitutions performed.
  */
-char *replaceTargetListWithSubstituteList(
-    const char *inHaystack,
-    SimpleVector<char *> *inTargetVector,
-    SimpleVector<char *> *inSubstituteVector );
-
-
-
+char *replaceTargetListWithSubstituteList(const char *inHaystack, SimpleVector<char *> *inTargetVector,
+                                          SimpleVector<char *> *inSubstituteVector);
 
 /**
  * Split a string into tokens using whitespace as separators.
@@ -330,17 +288,14 @@ char *replaceTargetListWithSubstituteList(
  * @return a vector of extracted strings.
  *   Vector and strings must be destroyed by caller.
  */
-SimpleVector<char *> *tokenizeString( const char *inString );
+SimpleVector<char *> *tokenizeString(const char *inString);
 
 // this version modifies inString by inserting \0 at the end of each token
 // and returns a vector of pointers into inString.
 // Thus, inString, and the vector, is the only thing that needs to be
 // destroyed by caller (not the returned string pointers in the vector)
 // This call is also much faster.
-SimpleVector<char *> *tokenizeStringInPlace( char *inString );
-
-
-
+SimpleVector<char *> *tokenizeStringInPlace(char *inString);
 
 /**
  * Trim whitespace characters from the start and end of a string.
@@ -351,10 +306,7 @@ SimpleVector<char *> *tokenizeStringInPlace( char *inString );
  * @return the trimmed version, as a newly-allocated string.
  *   Must be destroyed by caller.
  */
-char *trimWhitespace( char *inString );
-
-
-
+char *trimWhitespace(char *inString);
 
 /**
  * Prints formatted data elements into a newly allocated string buffer.
@@ -370,13 +322,10 @@ char *trimWhitespace( char *inString );
  *   string.
  *   Must be destroyed by caller.
  */
-char *autoSprintf( const char* inFormatString, ... );
-
+char *autoSprintf(const char *inFormatString, ...);
 
 // same as above, but takes a va_list directly
-char *vautoSprintf( const char* inFormatString, va_list inArgList );
-
-
+char *vautoSprintf(const char *inFormatString, va_list inArgList);
 
 /**
  * Fast scanning of a series of integers from a string that are separated
@@ -404,8 +353,6 @@ char *vautoSprintf( const char* inFormatString, va_list inArgList );
  *
  * @return the scanned integer, or default of 0 if scanning fails.
  */
-int scanIntAndSkip( char **inOutStringPointer,
-                    char *outSuccess = NULL  );
-
+int scanIntAndSkip(char **inOutStringPointer, char *outSuccess = NULL);
 
 #endif

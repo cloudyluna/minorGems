@@ -49,7 +49,6 @@
 
 #include "minorGems/common.h"
 
-
 #ifndef HOST_ADDRESS_CLASS_INCLUDED
 #define HOST_ADDRESS_CLASS_INCLUDED
 
@@ -60,207 +59,175 @@
 #include "minorGems/io/Serializable.h"
 #include "minorGems/util/stringUtils.h"
 
-
-
-
-
-
 /**
  * Address of a network host.
  *
  * @author Jason Rohrer
- */ 
-class HostAddress : public Serializable {
+ */
+class HostAddress : public Serializable
+{
 
-	public:
+  public:
+    /**
+     * Constructs an uninitialized address.
+     *
+     * Note that all other functions (besides deserialize and the
+     * destructor) assume that the HostAddress is initialized.
+     *
+     * Useful prior to deserialization.
+     */
+    HostAddress();
 
-		
+    /**
+     * Constructs an address.
+     *
+     * @param inAddressString a \0-terminated string containing the
+     *   host address. This string will be destroyed when this class
+     *   is destroyed, so it cannot be const.
+     * @param inPort the port of the host.
+     */
+    HostAddress(char *inAddressString, int inPort);
 
-		/**
-		 * Constructs an uninitialized address.
-		 *
-		 * Note that all other functions (besides deserialize and the
-		 * destructor) assume that the HostAddress is initialized.
-		 *
-		 * Useful prior to deserialization.
-		 */
-		HostAddress();
+    virtual ~HostAddress();
 
-		
-		
-		/**
-		 * Constructs an address.
-		 *
-		 * @param inAddressString a \0-terminated string containing the
-		 *   host address. This string will be destroyed when this class
-		 *   is destroyed, so it cannot be const.
-		 * @param inPort the port of the host.
-		 */
-		HostAddress( char *inAddressString, int inPort );
+    /**
+     * Gets the address of the local host.
+     *
+     * @return the address of the local host.
+     *   Note that the mPort field in the returned HostAddress is
+     *   set to 0.
+     *   Must be destroyed by caller.
+     */
+    static HostAddress *getLocalAddress();
 
+    /**
+     * Gets the address of the local host in numerical format.
+     *
+     * @return the address of the local host.
+     *   Note that the mPort field in the returned HostAddress is
+     *   set to 0.
+     *   Must be destroyed by caller.
+     */
+    static HostAddress *getNumericalLocalAddress();
 
+    /**
+     * Gets a numerical version of this host address.
+     *
+     * For example, if we are using IPv4, this will generate a
+     * HostAddress containing an aaa.bbb.ccc.ddd style address.
+     *
+     * @return a numerical version of this address, or NULL
+     *   if address resolution fails.
+     *   Must be destroyed by caller if non-NULL.
+     */
+    HostAddress *getNumericalAddress();
 
-		virtual ~HostAddress();
+    /**
+     * Gets whether this address is in numerical format.
+     * For IpV4, this is xxx.xxx.xxx.xxx
+     *
+     * @return true if this address is numerical.
+     */
+    char isNumerical();
 
+    /**
+     * Gets whether another address is equivalent to this address.
+     *
+     * @param inAddress the address to compare to this address.
+     *
+     * @return true iff inAddress is equivalent to this address.
+     */
+    char equals(HostAddress *inAddress);
 
+    /**
+     * Makes a copy of this host address.
+     *
+     * @return the copy of this address.
+     */
+    HostAddress *copy();
 
-		/**
-		 * Gets the address of the local host.
-		 *
-		 * @return the address of the local host.
-		 *   Note that the mPort field in the returned HostAddress is
-		 *   set to 0.
-		 *   Must be destroyed by caller.
-		 */
-		static HostAddress *getLocalAddress();
+    /**
+     * Prints this address to standard out.
+     */
+    void print();
 
+    // implement the Serializable interface
+    virtual int serialize(OutputStream *inOutputStream);
 
+    virtual int deserialize(InputStream *inInputStream);
 
-        /**
-         * Gets the address of the local host in numerical format.
-		 *
-		 * @return the address of the local host.
-		 *   Note that the mPort field in the returned HostAddress is
-		 *   set to 0.
-		 *   Must be destroyed by caller.
-		 */
-        static HostAddress *getNumericalLocalAddress();
+    char *mAddressString;
+    int mAddressLength;
+    int mPort;
+};
 
+inline HostAddress::HostAddress(char *inAddressString, int inPort) : mAddressString(inAddressString), mPort(inPort)
+{
 
+    mAddressLength = strlen(mAddressString);
+}
 
-		/**
-         * Gets a numerical version of this host address.
-         *
-         * For example, if we are using IPv4, this will generate a
-         * HostAddress containing an aaa.bbb.ccc.ddd style address.
-         *
-         * @return a numerical version of this address, or NULL
-         *   if address resolution fails.
-         *   Must be destroyed by caller if non-NULL.
-         */
-        HostAddress *getNumericalAddress();
+inline HostAddress::HostAddress() : mAddressString(NULL)
+{
 
+    mAddressLength = 0;
+    mPort = 0;
+}
 
+inline HostAddress::~HostAddress()
+{
+    if (mAddressString != NULL)
+    {
+        delete[] mAddressString;
+    }
+}
 
-        /**
-         * Gets whether this address is in numerical format.
-         * For IpV4, this is xxx.xxx.xxx.xxx
-         *
-         * @return true if this address is numerical.
-         */
-        char isNumerical();
-
-        
-
-		/**
-		 * Gets whether another address is equivalent to this address.
-		 *
-		 * @param inAddress the address to compare to this address.
-		 *
-		 * @return true iff inAddress is equivalent to this address.
-		 */
-		char equals( HostAddress *inAddress );
-
-
-
-		/**
-		 * Makes a copy of this host address.
-		 *
-		 * @return the copy of this address.
-		 */
-		HostAddress *copy();
-
-		
-		
-		/**
-		 * Prints this address to standard out.
-		 */
-		void print();
-
-
-
-		// implement the Serializable interface
-		virtual int serialize( OutputStream *inOutputStream );
-
-		virtual int deserialize( InputStream *inInputStream );
-
-		
-		
-		char *mAddressString;
-		int mAddressLength;
-		int mPort;
-		
-	};		
-
-
-
-inline HostAddress::HostAddress( char *inAddressString, int inPort ) 
-	: mAddressString( inAddressString ), mPort( inPort ) {
-	
-	mAddressLength = strlen( mAddressString );
-	}
-
-
-
-inline HostAddress::HostAddress() 
-	: mAddressString( NULL ) {
-	
-	mAddressLength = 0;
-	mPort = 0;
-	}
-
-
-
-inline HostAddress::~HostAddress() {
-	if( mAddressString != NULL ) {
-		delete [] mAddressString;
-		}
-	}
-
-
-
-inline HostAddress *HostAddress::getNumericalLocalAddress() {
+inline HostAddress *HostAddress::getNumericalLocalAddress()
+{
     HostAddress *address = getLocalAddress();
 
-    if( address != NULL ) {
-        
+    if (address != NULL)
+    {
+
         HostAddress *numAddress = address->getNumericalAddress();
-        
+
         delete address;
 
         return numAddress;
-        }
-    
-    return NULL;
     }
 
+    return NULL;
+}
 
-
-inline char HostAddress::equals( HostAddress *inAddress ) {
+inline char HostAddress::equals(HostAddress *inAddress)
+{
     // if the port numbers are not equal, we can return
     // right away
-    if( mPort != inAddress->mPort ) {
+    if (mPort != inAddress->mPort)
+    {
         return false;
-        }
+    }
 
     // otherwise, the port numbers are equal,
     // so we need to compare the addresses
-    
+
     // first, try to compare numercally looked-up addresses
     HostAddress *numericalThis = this->getNumericalAddress();
 
-    if( numericalThis != NULL ) {
+    if (numericalThis != NULL)
+    {
 
         HostAddress *numericalOther = inAddress->getNumericalAddress();
 
-        if( numericalOther != NULL ) {
+        if (numericalOther != NULL)
+        {
 
             char returnVal = false;
-                        
+
             // watch out for localhost loopbacks
-            
-            if( !strcmp( numericalThis->mAddressString,
-                         "127.0.0.1" ) ) {
+
+            if (!strcmp(numericalThis->mAddressString, "127.0.0.1"))
+            {
 
                 // this address is localhost
 
@@ -268,128 +235,124 @@ inline char HostAddress::equals( HostAddress *inAddress ) {
 
                 HostAddress *localAddress = getNumericalLocalAddress();
 
-                if( localAddress != NULL ) {
-                    if( !strcmp( localAddress->mAddressString,
-                                 numericalOther->mAddressString ) ) {
+                if (localAddress != NULL)
+                {
+                    if (!strcmp(localAddress->mAddressString, numericalOther->mAddressString))
+                    {
 
                         returnVal = true;
-                        }
+                    }
 
                     delete localAddress;
-                    }
-                else {
+                }
+                else
+                {
                     // numerical lookup failed for one but not the
                     // other, so assume addresses are different
                     returnVal = false;
-                    }
-                
                 }
-            else if( !strcmp( numericalOther->mAddressString,
-                              "127.0.0.1" ) ) {
+            }
+            else if (!strcmp(numericalOther->mAddressString, "127.0.0.1"))
+            {
                 // other address is localhost
 
                 // make sure this address is not our external local address
 
                 HostAddress *localAddress = getNumericalLocalAddress();
-                if( localAddress != NULL ) {                
-                    if( !strcmp( localAddress->mAddressString,
-                                 numericalThis->mAddressString ) ) {
-                        
+                if (localAddress != NULL)
+                {
+                    if (!strcmp(localAddress->mAddressString, numericalThis->mAddressString))
+                    {
+
                         returnVal = true;
-                        }
-                    
-                    delete localAddress;                
                     }
-                else {
+
+                    delete localAddress;
+                }
+                else
+                {
                     // numerical lookup failed for one but not the
                     // other, so assume addresses are different
                     returnVal = false;
-                    }
                 }
-            
+            }
+
             // if numerical addresses are identical,
             // then hosts are equal
-            if( !strcmp( numericalThis->mAddressString,
-                         numericalOther->mAddressString ) ) {
-                
+            if (!strcmp(numericalThis->mAddressString, numericalOther->mAddressString))
+            {
+
                 returnVal = true;
-                }
+            }
             delete numericalOther;
             delete numericalThis;
 
-            
             return returnVal;
-            }
-        
-        delete numericalThis;
         }
 
-    // otherwise, if lookup fails, compare raw adddresses
-    if( !strcmp( inAddress->mAddressString, mAddressString ) ) {
-        return true;
-        }
-    else {
-        return false;
-        }
+        delete numericalThis;
     }
 
+    // otherwise, if lookup fails, compare raw adddresses
+    if (!strcmp(inAddress->mAddressString, mAddressString))
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
 
+inline HostAddress *HostAddress::copy()
+{
+    char *stringCopy = new char[strlen(mAddressString) + 1];
+    strcpy(stringCopy, mAddressString);
 
-inline HostAddress *HostAddress::copy() {
-	char *stringCopy = new char[ strlen( mAddressString ) + 1 ];
-	strcpy( stringCopy, mAddressString );
+    return new HostAddress(stringCopy, mPort);
+}
 
-	return new HostAddress( stringCopy, mPort );
-	}
+inline void HostAddress::print()
+{
+    printf("%s:%d", mAddressString, mPort);
+}
 
+inline int HostAddress::serialize(OutputStream *inOutputStream)
+{
+    int numTransmitted = 0;
 
+    numTransmitted += inOutputStream->writeLong((long)mAddressLength);
 
-inline void HostAddress::print() {
-	printf( "%s:%d", mAddressString, mPort );
-	}
+    numTransmitted += inOutputStream->write((unsigned char *)mAddressString, mAddressLength);
 
+    numTransmitted += inOutputStream->writeLong((long)mPort);
 
+    return numTransmitted;
+}
 
-inline int HostAddress::serialize( OutputStream *inOutputStream ) {
-	int numTransmitted = 0;
+inline int HostAddress::deserialize(InputStream *inInputStream)
+{
+    int numTransmitted = 0;
 
-	numTransmitted += inOutputStream->writeLong( (long)mAddressLength );
+    long readLong;
 
-	numTransmitted +=inOutputStream->write(
-		(unsigned char *)mAddressString, mAddressLength );
-		
-	numTransmitted += inOutputStream->writeLong( (long)mPort );
+    numTransmitted += inInputStream->readLong(&readLong);
+    mAddressLength = (int)readLong;
 
-	return numTransmitted;
-	}
+    if (mAddressString != NULL)
+    {
+        delete[] mAddressString;
+    }
 
+    mAddressString = new char[mAddressLength];
 
+    numTransmitted += inInputStream->read((unsigned char *)mAddressString, mAddressLength);
 
-inline int HostAddress::deserialize( InputStream *inInputStream ) {
-	int numTransmitted = 0;
+    numTransmitted += inInputStream->readLong(&readLong);
 
-	long readLong;
-	
-	numTransmitted += inInputStream->readLong( &readLong );
-	mAddressLength = (int)readLong;
+    mPort = readLong;
 
-	
-	if( mAddressString != NULL ) {
-		delete [] mAddressString;
-		}
+    return numTransmitted;
+}
 
-	mAddressString = new char[ mAddressLength ];
-	
-	numTransmitted +=inInputStream->read(
-		(unsigned char *)mAddressString, mAddressLength );
-		
-	numTransmitted += inInputStream->readLong( &readLong );
-
-	mPort = readLong;
-	
-	return numTransmitted;
-	}
-
-
-	
 #endif

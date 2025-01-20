@@ -10,9 +10,7 @@
  * Fixed a conversion bug.
  */
 
-
 #include "minorGems/system/Time.h"
-
 
 #include <time.h>
 
@@ -22,25 +20,19 @@
 
 #include <stdio.h>
 
-
 char Time::sEpochTimeSet = false;
 
 // C standard says that -1 is a valid time_t value
-time_t Time::sEpochTime = (time_t)( -1 );
+time_t Time::sEpochTime = (time_t)(-1);
 
+void Time::getCurrentTime(timeSec_t *outSeconds, unsigned long *outMilliseconds)
+{
 
-void Time::getCurrentTime( timeSec_t *outSeconds,
-						   unsigned long *outMilliseconds ) {
-	
-	struct timeval currentTime;
+    struct timeval currentTime;
 
-    gettimeofday( &currentTime, NULL );
+    gettimeofday(&currentTime, NULL);
 
-    
-	*outMilliseconds = currentTime.tv_usec / 1000;
-	
-    
-    *outSeconds = normalize( currentTime.tv_sec );
-	}
+    *outMilliseconds = currentTime.tv_usec / 1000;
 
-
+    *outSeconds = normalize(currentTime.tv_sec);
+}

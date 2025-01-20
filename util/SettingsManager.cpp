@@ -47,606 +47,524 @@
  * since %lf doesn't seem to work on mingw, and %f is correct.
  */
 
-
-
 #include "SettingsManager.h"
 
-
-#include "minorGems/util/stringUtils.h"
 #include "minorGems/io/file/File.h"
 #include "minorGems/io/file/Path.h"
+#include "minorGems/util/stringUtils.h"
 
 #include "minorGems/crypto/hashes/sha1.h"
-
-
 
 // will be destroyed automatically at program termination
 SettingsManagerStaticMembers SettingsManager::mStaticMembers;
 
 char SettingsManager::mHashingOn = false;
 
+void SettingsManager::setDirectoryName(const char *inName)
+{
+    delete[] mStaticMembers.mDirectoryName;
+    mStaticMembers.mDirectoryName = stringDuplicate(inName);
+}
 
+char *SettingsManager::getDirectoryName()
+{
+    return stringDuplicate(mStaticMembers.mDirectoryName);
+}
 
-void SettingsManager::setDirectoryName( const char *inName ) {
-    delete [] mStaticMembers.mDirectoryName;
-    mStaticMembers.mDirectoryName = stringDuplicate( inName );
-    }
+void SettingsManager::setHashSalt(const char *inSalt)
+{
+    delete[] mStaticMembers.mHashSalt;
+    mStaticMembers.mHashSalt = stringDuplicate(inSalt);
+}
 
+char *SettingsManager::getHashSalt()
+{
+    return stringDuplicate(mStaticMembers.mHashSalt);
+}
 
-
-char *SettingsManager::getDirectoryName() {
-    return stringDuplicate( mStaticMembers.mDirectoryName );
-    }
-
-
-
-void SettingsManager::setHashSalt( const char *inSalt ) {
-    delete [] mStaticMembers.mHashSalt;
-    mStaticMembers.mHashSalt = stringDuplicate( inSalt );
-    }
-
-
-
-char *SettingsManager::getHashSalt() {
-    return stringDuplicate( mStaticMembers.mHashSalt );
-    }
-
-
-
-void SettingsManager::setHashingOn( char inOn ) {
+void SettingsManager::setHashingOn(char inOn)
+{
     mHashingOn = inOn;
-    }
+}
 
+SimpleVector<char *> *SettingsManager::getSetting(const char *inSettingName)
+{
 
+    char *fileContents = getSettingContents(inSettingName);
 
-
-SimpleVector<char *> *SettingsManager::getSetting( 
-    const char *inSettingName ) {
-
-    char *fileContents = getSettingContents( inSettingName );
-    
-    if( fileContents == NULL ) {
+    if (fileContents == NULL)
+    {
         // return empty vector
-        return new SimpleVector<char*>();
-        }
-
+        return new SimpleVector<char *>();
+    }
 
     // else tokenize the file contents
-    SimpleVector<char *> *returnVector = tokenizeString( fileContents );
+    SimpleVector<char *> *returnVector = tokenizeString(fileContents);
 
-    delete [] fileContents;
-    
+    delete[] fileContents;
+
     return returnVector;
-    }
+}
 
+SimpleVector<int> *SettingsManager::getIntSettingMulti(const char *inSettingName)
+{
 
+    SimpleVector<char *> *settingStrings = getSetting(inSettingName);
 
-SimpleVector<int> *SettingsManager::getIntSettingMulti( 
-    const char *inSettingName ) {
+    SimpleVector<int> *settingInts = new SimpleVector<int>(settingStrings->size());
 
-    SimpleVector<char*> *settingStrings = getSetting( inSettingName );
-    
-
-    SimpleVector<int> *settingInts = 
-        new SimpleVector<int>( settingStrings->size() );
-    
-
-    for( int i=0; i< settingStrings->size(); i++ ) {
+    for (int i = 0; i < settingStrings->size(); i++)
+    {
         int value;
-        
-        int numRead = sscanf( settingStrings->getElementDirect( i ), "%d",
-                              &value );
 
-        if( numRead == 1 ) {
-            settingInts->push_back( value );
-            }
+        int numRead = sscanf(settingStrings->getElementDirect(i), "%d", &value);
+
+        if (numRead == 1)
+        {
+            settingInts->push_back(value);
         }
-    
+    }
+
     settingStrings->deallocateStringElements();
-    
+
     delete settingStrings;
-    
+
     return settingInts;
-    }
+}
 
+SimpleVector<float> *SettingsManager::getFloatSettingMulti(const char *inSettingName)
+{
 
+    SimpleVector<char *> *settingStrings = getSetting(inSettingName);
 
-SimpleVector<float> *SettingsManager::getFloatSettingMulti( 
-    const char *inSettingName ) {
+    SimpleVector<float> *settingFloats = new SimpleVector<float>(settingStrings->size());
 
-    SimpleVector<char*> *settingStrings = getSetting( inSettingName );
-    
-
-    SimpleVector<float> *settingFloats = 
-        new SimpleVector<float>( settingStrings->size() );
-    
-
-    for( int i=0; i< settingStrings->size(); i++ ) {
+    for (int i = 0; i < settingStrings->size(); i++)
+    {
         float value;
-        
-        int numRead = sscanf( settingStrings->getElementDirect( i ), "%f",
-                              &value );
 
-        if( numRead == 1 ) {
-            settingFloats->push_back( value );
-            }
+        int numRead = sscanf(settingStrings->getElementDirect(i), "%f", &value);
+
+        if (numRead == 1)
+        {
+            settingFloats->push_back(value);
         }
-    
+    }
+
     settingStrings->deallocateStringElements();
-    
+
     delete settingStrings;
-    
+
     return settingFloats;
-    }
+}
 
+SimpleVector<double> *SettingsManager::getDoubleSettingMulti(const char *inSettingName)
+{
 
+    SimpleVector<char *> *settingStrings = getSetting(inSettingName);
 
+    SimpleVector<double> *settingDoubles = new SimpleVector<double>(settingStrings->size());
 
-SimpleVector<double> *SettingsManager::getDoubleSettingMulti( 
-    const char *inSettingName ) {
-
-    SimpleVector<char*> *settingStrings = getSetting( inSettingName );
-    
-
-    SimpleVector<double> *settingDoubles = 
-        new SimpleVector<double>( settingStrings->size() );
-    
-
-    for( int i=0; i< settingStrings->size(); i++ ) {
+    for (int i = 0; i < settingStrings->size(); i++)
+    {
         double value;
-        
-        int numRead = sscanf( settingStrings->getElementDirect( i ), "%lf",
-                              &value );
 
-        if( numRead == 1 ) {
-            settingDoubles->push_back( value );
-            }
+        int numRead = sscanf(settingStrings->getElementDirect(i), "%lf", &value);
+
+        if (numRead == 1)
+        {
+            settingDoubles->push_back(value);
         }
-    
-    settingStrings->deallocateStringElements();
-    
-    delete settingStrings;
-    
-    return settingDoubles;
     }
 
+    settingStrings->deallocateStringElements();
 
+    delete settingStrings;
 
+    return settingDoubles;
+}
 
-char *SettingsManager::getSettingContents( const char *inSettingName ) {
+char *SettingsManager::getSettingContents(const char *inSettingName)
+{
 
-    char *fileName = getSettingsFileName( inSettingName );
-    File *settingsFile = new File( NULL, fileName );
+    char *fileName = getSettingsFileName(inSettingName);
+    File *settingsFile = new File(NULL, fileName);
 
-    delete [] fileName;
-    
+    delete[] fileName;
+
     char *fileContents = settingsFile->readFileContents();
 
     delete settingsFile;
 
-    
-    if( fileContents == NULL ) {
+    if (fileContents == NULL)
+    {
         return NULL;
-        }
-    
-    if( mHashingOn ) {
-        
-        char *hashFileName = getSettingsFileName( inSettingName, "hash" );
-        
-        File *hashFile = new File( NULL, hashFileName );
-        
-        delete [] hashFileName;
-        
+    }
+
+    if (mHashingOn)
+    {
+
+        char *hashFileName = getSettingsFileName(inSettingName, "hash");
+
+        File *hashFile = new File(NULL, hashFileName);
+
+        delete[] hashFileName;
+
         char *savedHash = hashFile->readFileContents();
-        
+
         delete hashFile;
 
-        if( savedHash == NULL ) {
-            printf( "Hash missing for setting %s\n", inSettingName );
+        if (savedHash == NULL)
+        {
+            printf("Hash missing for setting %s\n", inSettingName);
 
-            delete [] fileContents;
+            delete[] fileContents;
             return NULL;
-            }
-    
-        
-        // compute hash
-        char *stringToHash = autoSprintf( "%s%s",
-                                          fileContents,
-                                          mStaticMembers.mHashSalt );
-
-        char *hash = computeSHA1Digest( stringToHash );
-
-        delete [] stringToHash;
-        
-        int difference = strcmp( hash, savedHash );
-        
-        delete [] hash;
-        delete [] savedHash;
-        
-
-        if( difference != 0 ) {
-            printf( "Hash mismatch for setting %s\n", inSettingName );
-            
-            delete [] fileContents;
-            return NULL;
-            }
         }
-    
-    return fileContents;
+
+        // compute hash
+        char *stringToHash = autoSprintf("%s%s", fileContents, mStaticMembers.mHashSalt);
+
+        char *hash = computeSHA1Digest(stringToHash);
+
+        delete[] stringToHash;
+
+        int difference = strcmp(hash, savedHash);
+
+        delete[] hash;
+        delete[] savedHash;
+
+        if (difference != 0)
+        {
+            printf("Hash mismatch for setting %s\n", inSettingName);
+
+            delete[] fileContents;
+            return NULL;
+        }
     }
 
+    return fileContents;
+}
 
+char *SettingsManager::getSettingContents(const char *inSettingName, const char *inDefaultValue)
+{
+    char *val = getSettingContents(inSettingName);
 
-char *SettingsManager::getSettingContents( const char *inSettingName,
-                                           const char *inDefaultValue ) {
-    char *val = getSettingContents( inSettingName );
-    
-    if( val == NULL ) {
-        val = stringDuplicate( inDefaultValue );
-        }
+    if (val == NULL)
+    {
+        val = stringDuplicate(inDefaultValue);
+    }
 
     return val;
+}
+
+char *SettingsManager::getStringSetting(const char *inSettingName)
+{
+    char *value = NULL;
+
+    SimpleVector<char *> *settingsVector = getSetting(inSettingName);
+
+    int numStrings = settingsVector->size();
+    if (numStrings >= 1)
+    {
+
+        char *firstString = *(settingsVector->getElement(0));
+
+        value = stringDuplicate(firstString);
     }
 
+    for (int i = 0; i < numStrings; i++)
+    {
+        char *nextString = *(settingsVector->getElement(i));
 
+        delete[] nextString;
+    }
 
-char *SettingsManager::getStringSetting( const char *inSettingName ) {
-    char *value = NULL;
-    
-    SimpleVector<char *> *settingsVector = getSetting( inSettingName );
-
-    int numStrings = settingsVector->size(); 
-    if( numStrings >= 1 ) {
-
-        char *firstString = *( settingsVector->getElement( 0 ) );
-
-        value = stringDuplicate( firstString );
-        }
-
-    for( int i=0; i<numStrings; i++ ) {
-        char *nextString = *( settingsVector->getElement( i ) );
-
-        delete [] nextString;
-        }
-    
     delete settingsVector;
 
     return value;
+}
+
+char *SettingsManager::getStringSetting(const char *inSettingName, const char *inDefaultValue)
+{
+    char *val = getStringSetting(inSettingName);
+
+    if (val == NULL)
+    {
+        val = stringDuplicate(inDefaultValue);
     }
-
-
-
-char *SettingsManager::getStringSetting( const char *inSettingName,
-                                         const char *inDefaultValue ) {
-    char *val = getStringSetting( inSettingName );
-    
-    if( val == NULL ) {
-        val = stringDuplicate( inDefaultValue );
-        }
 
     return val;
-    }
+}
 
-
-
-
-float SettingsManager::getFloatSetting( const char *inSettingName,
-                                        char *outValueFound ) {
+float SettingsManager::getFloatSetting(const char *inSettingName, char *outValueFound)
+{
 
     char valueFound = false;
     float value = 0;
 
+    char *stringValue = getStringSetting(inSettingName);
 
-    char *stringValue = getStringSetting( inSettingName );
+    if (stringValue != NULL)
+    {
 
-    if( stringValue != NULL ) {
+        int numRead = sscanf(stringValue, "%f", &value);
 
-        int numRead = sscanf( stringValue, "%f",
-                              &value );
-
-        if( numRead == 1 ) {
+        if (numRead == 1)
+        {
             valueFound = true;
-            }
-
-        delete [] stringValue;
         }
+
+        delete[] stringValue;
+    }
 
     *outValueFound = valueFound;
 
     return value;
-    }
+}
 
-
-
-float SettingsManager::getFloatSetting( const char *inSettingName,
-                                        float inDefaultValue ) {
+float SettingsManager::getFloatSetting(const char *inSettingName, float inDefaultValue)
+{
     char found;
-    float value = getFloatSetting( inSettingName, &found );
-    if( !found ) {
+    float value = getFloatSetting(inSettingName, &found);
+    if (!found)
+    {
         value = inDefaultValue;
-        }
-    return value;
     }
+    return value;
+}
 
-
-
-
-double SettingsManager::getDoubleSetting( const char *inSettingName,
-                                          char *outValueFound ) {
+double SettingsManager::getDoubleSetting(const char *inSettingName, char *outValueFound)
+{
 
     char valueFound = false;
     double value = 0;
 
+    char *stringValue = getStringSetting(inSettingName);
 
-    char *stringValue = getStringSetting( inSettingName );
+    if (stringValue != NULL)
+    {
 
-    if( stringValue != NULL ) {
+        int numRead = sscanf(stringValue, "%lf", &value);
 
-        int numRead = sscanf( stringValue, "%lf",
-                              &value );
-
-        if( numRead == 1 ) {
+        if (numRead == 1)
+        {
             valueFound = true;
-            }
-
-        delete [] stringValue;
         }
+
+        delete[] stringValue;
+    }
 
     *outValueFound = valueFound;
 
     return value;
-    }
+}
 
-
-
-double SettingsManager::getDoubleSetting( const char *inSettingName,
-                                          double inDefaultValue ) {
+double SettingsManager::getDoubleSetting(const char *inSettingName, double inDefaultValue)
+{
     char found;
-    double value = getDoubleSetting( inSettingName, &found );
-    if( !found ) {
+    double value = getDoubleSetting(inSettingName, &found);
+    if (!found)
+    {
         value = inDefaultValue;
-        }
-    return value;
     }
+    return value;
+}
 
-
-
-
-
-int SettingsManager::getIntSetting( const char *inSettingName,
-                                    char *outValueFound ) {
+int SettingsManager::getIntSetting(const char *inSettingName, char *outValueFound)
+{
 
     char valueFound = false;
     int value = 0;
 
+    char *stringValue = getStringSetting(inSettingName);
 
-    char *stringValue = getStringSetting( inSettingName );
+    if (stringValue != NULL)
+    {
 
-    if( stringValue != NULL ) {
+        int numRead = sscanf(stringValue, "%d", &value);
 
-        int numRead = sscanf( stringValue, "%d",
-                              &value );
-
-        if( numRead == 1 ) {
+        if (numRead == 1)
+        {
             valueFound = true;
-            }
-
-        delete [] stringValue;
         }
+
+        delete[] stringValue;
+    }
 
     *outValueFound = valueFound;
 
     return value;
-    }
+}
 
-
-
-int SettingsManager::getIntSetting( const char *inSettingName,
-                                    int inDefaultValue ) {
+int SettingsManager::getIntSetting(const char *inSettingName, int inDefaultValue)
+{
     char found;
-    int value = getIntSetting( inSettingName, &found );
-    if( !found ) {
+    int value = getIntSetting(inSettingName, &found);
+    if (!found)
+    {
         value = inDefaultValue;
-        }
-    return value;
     }
+    return value;
+}
 
-
-
-
-
-timeSec_t SettingsManager::getTimeSetting( const char *inSettingName,
-                                           timeSec_t inDefaultValue ) {
+timeSec_t SettingsManager::getTimeSetting(const char *inSettingName, timeSec_t inDefaultValue)
+{
 
     timeSec_t value = inDefaultValue;
 
+    char *stringValue = getStringSetting(inSettingName);
 
-    char *stringValue = getStringSetting( inSettingName );
+    if (stringValue != NULL)
+    {
 
-    if( stringValue != NULL ) {
-        
-        sscanf( stringValue, "%lf", &value );
-        
-        delete [] stringValue;
-        }
+        sscanf(stringValue, "%lf", &value);
+
+        delete[] stringValue;
+    }
 
     return value;
-    }
+}
 
-
-
-
-void SettingsManager::setSetting( const char *inSettingName,
-                                  SimpleVector<char *> *inSettingVector ) {
-
-    
-    
+void SettingsManager::setSetting(const char *inSettingName, SimpleVector<char *> *inSettingVector)
+{
 
     char **settingParts = inSettingVector->getElementArray();
-    
-    char *settingString = join( settingParts, inSettingVector->size(),
-                                 "\n" );
-    delete [] settingParts;
-    
-    setSetting( inSettingName, settingString );
-    }
 
+    char *settingString = join(settingParts, inSettingVector->size(), "\n");
+    delete[] settingParts;
 
+    setSetting(inSettingName, settingString);
+}
 
-void SettingsManager::setSetting( const char *inSettingName,
-                                  const char *inSettingValue ) {
+void SettingsManager::setSetting(const char *inSettingName, const char *inSettingValue)
+{
 
-    if( mHashingOn ) {
-        
+    if (mHashingOn)
+    {
+
         // compute hash
-        char *stringToHash = autoSprintf( "%s%s",
-                                          inSettingValue,
-                                          mStaticMembers.mHashSalt );
+        char *stringToHash = autoSprintf("%s%s", inSettingValue, mStaticMembers.mHashSalt);
 
-        char *hash = computeSHA1Digest( stringToHash );
+        char *hash = computeSHA1Digest(stringToHash);
 
-        delete [] stringToHash;
-        
-        char *hashFileName = getSettingsFileName( inSettingName, "hash" );
-    
-        FILE *file = fopen( hashFileName, "w" );
+        delete[] stringToHash;
 
-        delete [] hashFileName;
+        char *hashFileName = getSettingsFileName(inSettingName, "hash");
 
-        if( file != NULL ) {
-            fprintf( file, "%s", hash );
-            
-            fclose( file );
-            }
-        
-        delete [] hash;
+        FILE *file = fopen(hashFileName, "w");
+
+        delete[] hashFileName;
+
+        if (file != NULL)
+        {
+            fprintf(file, "%s", hash);
+
+            fclose(file);
         }
-    
 
-
-
-    FILE *file = getSettingsFile( inSettingName, "w" );
-    
-    if( file != NULL ) {
-        
-        fprintf( file, "%s", inSettingValue );
-        
-        fclose( file );
-        }
+        delete[] hash;
     }
 
+    FILE *file = getSettingsFile(inSettingName, "w");
 
+    if (file != NULL)
+    {
 
-void SettingsManager::setSetting( const char *inSettingName,
-                                  float inSettingValue ) {
+        fprintf(file, "%s", inSettingValue);
 
-    char *stringVal = autoSprintf( "%f", inSettingValue );
-
-    setSetting( inSettingName, stringVal );
-    
-    delete [] stringVal;
+        fclose(file);
     }
+}
 
+void SettingsManager::setSetting(const char *inSettingName, float inSettingValue)
+{
 
+    char *stringVal = autoSprintf("%f", inSettingValue);
 
-void SettingsManager::setDoubleSetting( const char *inSettingName,
-                                        double inSettingValue ) {
+    setSetting(inSettingName, stringVal);
 
-    char *stringVal = autoSprintf( "%f", inSettingValue );
+    delete[] stringVal;
+}
 
-    setSetting( inSettingName, stringVal );
-    
-    delete [] stringVal;
-    }
+void SettingsManager::setDoubleSetting(const char *inSettingName, double inSettingValue)
+{
 
+    char *stringVal = autoSprintf("%f", inSettingValue);
 
+    setSetting(inSettingName, stringVal);
 
+    delete[] stringVal;
+}
 
-void SettingsManager::setSetting( const char *inSettingName,
-                                  int inSettingValue ) {
+void SettingsManager::setSetting(const char *inSettingName, int inSettingValue)
+{
 
-    char *stringVal = autoSprintf( "%d", inSettingValue );
+    char *stringVal = autoSprintf("%d", inSettingValue);
 
-    setSetting( inSettingName, stringVal );
-    
-    delete [] stringVal;
-    }
+    setSetting(inSettingName, stringVal);
 
+    delete[] stringVal;
+}
 
-
-void SettingsManager::setSetting( const char *inSettingName,
-                                  timeSec_t inSettingValue ) {
+void SettingsManager::setSetting(const char *inSettingName, timeSec_t inSettingValue)
+{
 
     // don't want a fixed buffer for printing doubles
-    char *stringVal = autoSprintf( "%f", inSettingValue );
-    
-    setSetting( inSettingName, stringVal );
-    
-    delete [] stringVal;
-    }
+    char *stringVal = autoSprintf("%f", inSettingValue);
 
+    setSetting(inSettingName, stringVal);
 
+    delete[] stringVal;
+}
 
+FILE *SettingsManager::getSettingsFile(const char *inSettingName, const char *inReadWriteFlags)
+{
+    char *fullFileName = getSettingsFileName(inSettingName);
 
-FILE *SettingsManager::getSettingsFile( const char *inSettingName,
-                                        const char *inReadWriteFlags ) {
-    char *fullFileName = getSettingsFileName( inSettingName );
-    
-    FILE *file = fopen( fullFileName, inReadWriteFlags );
+    FILE *file = fopen(fullFileName, inReadWriteFlags);
 
-    delete [] fullFileName;
-    
+    delete[] fullFileName;
+
     return file;
-    }
+}
 
+char *SettingsManager::getSettingsFileName(const char *inSettingName)
+{
+    return getSettingsFileName(inSettingName, "ini");
+}
 
-
-char *SettingsManager::getSettingsFileName( const char *inSettingName ) {
-    return getSettingsFileName( inSettingName, "ini" );
-    }
-
-
-
-char *SettingsManager::getSettingsFileName( const char *inSettingName,
-                                            const char *inExtension ) {
-    char **pathSteps = new char*[1];
+char *SettingsManager::getSettingsFileName(const char *inSettingName, const char *inExtension)
+{
+    char **pathSteps = new char *[1];
 
     pathSteps[0] = mStaticMembers.mDirectoryName;
 
-    char *fileName = new char[ strlen( inSettingName ) 
-                               + strlen( inExtension )
-                               + 2 ];
+    char *fileName = new char[strlen(inSettingName) + strlen(inExtension) + 2];
 
-    sprintf( fileName, "%s.%s", inSettingName, inExtension );
-    
-    File *settingsFile = new File( new Path( pathSteps, 1, false ),
-                                   fileName );
+    sprintf(fileName, "%s.%s", inSettingName, inExtension);
 
-    delete [] fileName;
+    File *settingsFile = new File(new Path(pathSteps, 1, false), fileName);
+
+    delete[] fileName;
 
     // pathSteps copied internally by Path constructor
-    delete [] pathSteps;
-    
+    delete[] pathSteps;
 
     char *fullFileName = settingsFile->getFullFileName();
-    
+
     delete settingsFile;
 
     return fullFileName;
-    }
-
-
+}
 
 SettingsManagerStaticMembers::SettingsManagerStaticMembers()
-    : mDirectoryName( stringDuplicate( "settings" ) ),
-      mHashSalt( stringDuplicate( "default_salt" ) ) {
-    
-    }
+    : mDirectoryName(stringDuplicate("settings")), mHashSalt(stringDuplicate("default_salt"))
+{
+}
 
-
-
-SettingsManagerStaticMembers::~SettingsManagerStaticMembers() {
-    delete [] mDirectoryName;
-    delete [] mHashSalt;
-    }
-
+SettingsManagerStaticMembers::~SettingsManagerStaticMembers()
+{
+    delete[] mDirectoryName;
+    delete[] mHashSalt;
+}

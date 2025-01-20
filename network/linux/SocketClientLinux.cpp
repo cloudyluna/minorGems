@@ -61,217 +61,202 @@
  * Fixed socklen_t on later versions of MacOSX.
  */
 
-
-
-#include "minorGems/network/SocketClient.h"
 #include "minorGems/network/NetworkFunctionLocks.h"
+#include "minorGems/network/SocketClient.h"
 #include "minorGems/system/MutexLock.h"
 
-
-
-#include <stdlib.h>
-#include <sys/types.h>
+#include <arpa/inet.h>
 #include <netdb.h>
 #include <netinet/in.h>
-#include <arpa/inet.h>
+#include <stdlib.h>
 #include <sys/socket.h>
+#include <sys/types.h>
 
 #include <fcntl.h>
 #include <sys/time.h>
 
-#include <unistd.h>
 #include <errno.h>
-
-
+#include <unistd.h>
 
 // BSD does not define socklen_t
 #ifdef BSD
 #ifndef IPHONE
 #ifndef __OpenBSD__
-#ifndef _SOCKLEN_T     // later versions of MacOS define it and mark it
+#ifndef _SOCKLEN_T // later versions of MacOS define it and mark it
 typedef int socklen_t;
 #endif
 #endif
 #endif
 #endif
 
-
-
 // prototypes
-struct in_addr *nameToAddress( char *inAddress );
+struct in_addr *nameToAddress(char *inAddress);
 
-int timed_connect( int inSocketID,
-                   struct sockaddr *inSocketAddress,
-                   int inAddressLength,
-                   int inTimeoutInMilliseconds );
+int timed_connect(int inSocketID, struct sockaddr *inSocketAddress, int inAddressLength, int inTimeoutInMilliseconds);
 
+Socket *SocketClient::connectToServer(HostAddress *inAddress, long inTimeoutInMilliseconds, char *outTimedOut)
+{
 
+    if (!Socket::isFrameworkInitialized())
+    {
 
-Socket *SocketClient::connectToServer( HostAddress *inAddress,
-                                       long inTimeoutInMilliseconds,
-                                       char *outTimedOut ) {
+        // try to init the framework
 
-	if( !Socket::isFrameworkInitialized() ) {
-		
-		// try to init the framework
-		
-		int error = Socket::initSocketFramework();
-		
-		if( error == -1 ) {
-			
-			printf( "initializing network socket framework failed\n" );
-			return NULL;
-			}
-		}
+        int error = Socket::initSocketFramework();
 
-	int socketID = socket( AF_INET, SOCK_STREAM, 0 );	
+        if (error == -1)
+        {
 
-	if( socketID == -1 ) {
-		printf( "Creating socket failed, error %d.\n", errno );
-		return NULL;
-		}
+            printf("initializing network socket framework failed\n");
+            return NULL;
+        }
+    }
 
-	union sock {
-		struct  sockaddr s;
-		struct  sockaddr_in i;
-		} sock;
+    int socketID = socket(AF_INET, SOCK_STREAM, 0);
 
-	struct in_addr *internet_address = 
-		nameToAddress( inAddress->mAddressString );
+    if (socketID == -1)
+    {
+        printf("Creating socket failed, error %d.\n", errno);
+        return NULL;
+    }
 
-	if( internet_address == NULL ) {
-		printf( "Host name lookup failed:  " );
-		inAddress->print();
-		printf( "\n" );
+    union sock {
+        struct sockaddr s;
+        struct sockaddr_in i;
+    } sock;
 
-        close( socketID );
-		return NULL;
-		}
+    struct in_addr *internet_address = nameToAddress(inAddress->mAddressString);
 
+    if (internet_address == NULL)
+    {
+        printf("Host name lookup failed:  ");
+        inAddress->print();
+        printf("\n");
 
-	sock.i.sin_family = AF_INET;
-	sock.i.sin_port = htons( inAddress->mPort );
-	sock.i.sin_addr = *internet_address;
+        close(socketID);
+        return NULL;
+    }
 
+    sock.i.sin_family = AF_INET;
+    sock.i.sin_port = htons(inAddress->mPort);
+    sock.i.sin_addr = *internet_address;
 
-	int error;
+    int error;
 
-    if( inTimeoutInMilliseconds != -1 ) {
+    if (inTimeoutInMilliseconds != -1)
+    {
         // use timeout
-        
-        error = timed_connect( socketID, &sock.s, sizeof( struct sockaddr ),
-                               inTimeoutInMilliseconds );
 
-        if( outTimedOut != NULL ) {
-            if( error == -2 ) {
+        error = timed_connect(socketID, &sock.s, sizeof(struct sockaddr), inTimeoutInMilliseconds);
+
+        if (outTimedOut != NULL)
+        {
+            if (error == -2)
+            {
                 *outTimedOut = true;
-                
-                if( inTimeoutInMilliseconds == 0 ) {
+
+                if (inTimeoutInMilliseconds == 0)
+                {
                     // caller didn't want to wait at all
                     error = 0;
-                    }
-                else {
+                }
+                else
+                {
                     // treat timeout as error
                     error = -1;
-                    }
-                
-                }
-            else {
-                *outTimedOut = false;
                 }
             }
+            else
+            {
+                *outTimedOut = false;
+            }
         }
-    else {
+    }
+    else
+    {
         // don't use timeout
-        
-        error = connect( socketID, &sock.s, sizeof( struct sockaddr ) );
-        }
 
+        error = connect(socketID, &sock.s, sizeof(struct sockaddr));
+    }
 
     delete internet_address;
-    
-    
-    if( error == -1 ) {
-		//printf( "Connecting to host failed:  " );
-		//inAddress->print();
-		//printf( "\n" );
 
-        close( socketID );
-		return NULL;
-		}
-	
-	// package into a Socket and return it
-	Socket *returnSocket = new Socket();
+    if (error == -1)
+    {
+        // printf( "Connecting to host failed:  " );
+        // inAddress->print();
+        // printf( "\n" );
 
-	returnSocket->mNativeSocketID = socketID;
-	
-    if( outTimedOut != NULL &&
-        *outTimedOut ) {
+        close(socketID);
+        return NULL;
+    }
+
+    // package into a Socket and return it
+    Socket *returnSocket = new Socket();
+
+    returnSocket->mNativeSocketID = socketID;
+
+    if (outTimedOut != NULL && *outTimedOut)
+    {
         // not connected yet
-        returnSocket->setConnected( false );
-        }
-    
+        returnSocket->setConnected(false);
+    }
 
-	return returnSocket;
-	}
-
-
+    return returnSocket;
+}
 
 /* Converts ascii text to in_addr struct.  NULL is returned if the
           address can not be found.
           Result must be destroyed by caller.
 Adapted from the Unix Socket FAQ		  */
-struct in_addr *nameToAddress( char *inAddress ) {
-	struct hostent *host;
-    
+struct in_addr *nameToAddress(char *inAddress)
+{
+    struct hostent *host;
+
     static struct in_addr saddr;
     struct in_addr *copiedSaddr = new struct in_addr;
 
-    
-	/* First try it as aaa.bbb.ccc.ddd. */
+    /* First try it as aaa.bbb.ccc.ddd. */
 
     // this is obsolete on linux
     // saddr.s_addr = inet_addr( inAddress );
 
-    int error = inet_aton( inAddress, &saddr );
-    
-    if( error != 0 ) {
-        // copy to avoid returning pointer to stack
-        memcpy( copiedSaddr, &saddr, sizeof( struct in_addr ) );
-        return copiedSaddr;
-		}
+    int error = inet_aton(inAddress, &saddr);
 
+    if (error != 0)
+    {
+        // copy to avoid returning pointer to stack
+        memcpy(copiedSaddr, &saddr, sizeof(struct in_addr));
+        return copiedSaddr;
+    }
 
     // must keep this locked until we are done copying the in_addr out
     // of the returned hostent
     NetworkFunctionLocks::mGetHostByNameLock.lock();
 
     char hostFound = false;
-    host = gethostbyname( inAddress );
-    if( host != NULL ) {
-        
-        memcpy( copiedSaddr,
-                *host->h_addr_list,
-                sizeof( struct in_addr ) );
-        
+    host = gethostbyname(inAddress);
+    if (host != NULL)
+    {
+
+        memcpy(copiedSaddr, *host->h_addr_list, sizeof(struct in_addr));
+
         hostFound = true;
-        }
+    }
 
     NetworkFunctionLocks::mGetHostByNameLock.unlock();
 
-
-    
-    if( hostFound ) {
+    if (hostFound)
+    {
         return copiedSaddr;
-        }
-    else {
+    }
+    else
+    {
         delete copiedSaddr;
-        }
-    
-	return NULL;
-	}
+    }
 
-
+    return NULL;
+}
 
 /* timed_connect adapted from gnut, by Josh Pieper */
 /* Josh Pieper, (c) 2000 */
@@ -279,81 +264,82 @@ struct in_addr *nameToAddress( char *inAddress ) {
 
 // just like connect except that it times out after time secs
 // returns -2 on timeout, otherwise same as connect
-int timed_connect( int inSocketID,
-                   struct sockaddr *inSocketAddress,
-                   int inAddressLength,
-                   int inTimeoutInMilliseconds ) {
-	int ret;
-	fd_set fsr;
-	struct timeval tv;
-	int val;
+int timed_connect(int inSocketID, struct sockaddr *inSocketAddress, int inAddressLength, int inTimeoutInMilliseconds)
+{
+    int ret;
+    fd_set fsr;
+    struct timeval tv;
+    int val;
     socklen_t len;
-    
-	//g_debug(1,"entering sock=%i secs=%i\n",inSocketID,inTimeoutInSeconds);
-	
-	ret = fcntl( inSocketID, F_SETFL, O_NONBLOCK );
-	//g_debug(5,"fcntl returned %i\n",ret);
-	
-	if( ret < 0 ) {
+
+    // g_debug(1,"entering sock=%i secs=%i\n",inSocketID,inTimeoutInSeconds);
+
+    ret = fcntl(inSocketID, F_SETFL, O_NONBLOCK);
+    // g_debug(5,"fcntl returned %i\n",ret);
+
+    if (ret < 0)
+    {
         return ret;
-        }
-    
-	ret = connect( inSocketID, inSocketAddress, inAddressLength );
-	//g_debug(5,"connect returned %i\n",ret);
-	
-	if( ret == 0 ) {
-		//g_debug(0,"immediate connection!\n");
-		// wooah!  immediate connection
-		// return -2;
+    }
+
+    ret = connect(inSocketID, inSocketAddress, inAddressLength);
+    // g_debug(5,"connect returned %i\n",ret);
+
+    if (ret == 0)
+    {
+        // g_debug(0,"immediate connection!\n");
+        //  wooah!  immediate connection
+        //  return -2;
 
         // changed from what Josh originally returned (-2)
         // immediate connection *can* happen sometimes, right?
         // for example, when connecting to localhost...
         return 0;
-        }
-	
-//	if (errno != EINPROGRESS) {
-//		perror("timed_connect, connect");
-//		return ret;
-//	}
-	
+    }
 
-	FD_ZERO( &fsr );
-	FD_SET( inSocketID, &fsr );
+    //	if (errno != EINPROGRESS) {
+    //		perror("timed_connect, connect");
+    //		return ret;
+    //	}
+
+    FD_ZERO(&fsr);
+    FD_SET(inSocketID, &fsr);
 
     tv.tv_sec = inTimeoutInMilliseconds / 1000;
-	int remainder = inTimeoutInMilliseconds % 1000;
-	tv.tv_usec = remainder * 1000;
-    
+    int remainder = inTimeoutInMilliseconds % 1000;
+    tv.tv_usec = remainder * 1000;
 
-	ret = select( inSocketID+1, NULL, &fsr, NULL, &tv );
-	//g_debug(5,"select returned %i\n",ret);
+    ret = select(inSocketID + 1, NULL, &fsr, NULL, &tv);
+    // g_debug(5,"select returned %i\n",ret);
 
-	if( ret==0 ) {
-		// timeout
-		//g_debug(1,"timeout\n");
-		fcntl( inSocketID, F_SETFL, 0 );
-		return -2;
-        }
-
-	len = 4;
-	ret = getsockopt( inSocketID, SOL_SOCKET, SO_ERROR, &val, &len );
-	//g_debug(5,"getsockopt returned %i val=%i\n",ret,val);
-	
-	if( ret < 0 ) {
-		//g_debug(1,"getsockopt returned: %i\n",ret);
-		return ret;
-        }
-
-	if (val!=0) {
-		//g_debug(3,"returning failure!\n");
-		return -1;
-        }
-	
-	ret = fcntl( inSocketID, F_SETFL, 0 );
-	 
-	//g_debug(1,"fcntl: %i\n",ret);
-	
-	//g_debug(3,"returning success val=%i\n",val);
-	return 0;
+    if (ret == 0)
+    {
+        // timeout
+        // g_debug(1,"timeout\n");
+        fcntl(inSocketID, F_SETFL, 0);
+        return -2;
     }
+
+    len = 4;
+    ret = getsockopt(inSocketID, SOL_SOCKET, SO_ERROR, &val, &len);
+    // g_debug(5,"getsockopt returned %i val=%i\n",ret,val);
+
+    if (ret < 0)
+    {
+        // g_debug(1,"getsockopt returned: %i\n",ret);
+        return ret;
+    }
+
+    if (val != 0)
+    {
+        // g_debug(3,"returning failure!\n");
+        return -1;
+    }
+
+    ret = fcntl(inSocketID, F_SETFL, 0);
+
+    // g_debug(1,"fcntl: %i\n",ret);
+
+    // g_debug(3,"returning success val=%i\n",val);
+    return 0;
+}

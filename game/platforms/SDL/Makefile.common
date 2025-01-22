@@ -40,7 +40,8 @@ PROFILE_FLAG = ${PROFILE_OFF_FLAG}
 
 OPTIMIZE_ON_FLAG = -O3
 OPTIMIZE_OFF_FLAG = -O0
-#OPTIMIZE_ASAN_FLAG = -O3 -fsanitize=address,undefined,leak -fno-omit-frame-pointer
+OPTIMIZE_DEBUG_NO_WARN_FLAG = ${OPTIMIZE_OFF_FLAG} -w
+OPTIMIZE_ASAN_FLAG = -O3 -fsanitize=address,undefined,leak -fno-omit-frame-pointer
 OPTIMIZE_FLAG = ${OPTIMIZE_OFF_FLAG}
 
 
